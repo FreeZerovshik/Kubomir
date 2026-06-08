@@ -34,6 +34,8 @@
     emerald:       { id: "emerald",       name: "Изумруд",        icon: "💚", stack: 99 },
     pick_emerald:  { id: "pick_emerald",  name: "Изумрудная кирка", icon: "⛏", stack: 1, tool: "pick", power: 12 },
     sword_emerald: { id: "sword_emerald", name: "Изумрудный меч",   icon: "⚔", stack: 1, weapon: 11 },
+    sword_fire:    { id: "sword_fire",    name: "Огненный меч",     icon: "🔥", stack: 1, weapon: 9, elem: "fire" },
+    sword_frost:   { id: "sword_frost",   name: "Ледяной меч",      icon: "❄", stack: 1, weapon: 9, elem: "frost" },
     mushroom:      { id: "mushroom",      name: "Гриб",           icon: "🍄", stack: 99, food: 3 },
     mushroom_stew: { id: "mushroom_stew", name: "Грибной суп",    icon: "🍲", stack: 99, food: 8 },
     meat:        { id: "meat",        name: "Мясо",         icon: "🥩", stack: 99, food: 3 },
@@ -125,6 +127,8 @@
     { out: "sword_diamond", n: 1, once: true, in: [["diamond", 2], ["stick", 1]] },
     { out: "pick_emerald",  n: 1, once: true, cat: "tools", in: [["emerald", 3], ["stick", 2]] },
     { out: "sword_emerald", n: 1, once: true, cat: "tools", in: [["emerald", 2], ["stick", 1]] },
+    { out: "sword_fire",  n: 1, once: true, cat: "tools", in: [["sword_diamond", 1], ["coal", 4]] },          // 🔥 зачарование огнём
+    { out: "sword_frost", n: 1, once: true, cat: "tools", in: [["sword_diamond", 1], ["ghost_shard", 2]] },   // ❄ зачарование льдом
     { out: "mushroom_stew", n: 1, cat: "food", in: [["mushroom", 2]] },
     { out: "cooked_meat", n: 1, station: "furnace", in: [["meat", 1]] },
     { out: "brick", n: 1, station: "furnace", in: [["clay", 1]] },  // обжиг глины

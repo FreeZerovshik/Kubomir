@@ -376,7 +376,7 @@
       if (this._perksPending > 0 && !this._perkOpen) this.openPerks();
     },
     xpNeed(lv) { return 30 + lv * 20; },
-    openPerks() { this._perkChoices = this.rollPerks(); this._perkOpen = true; this._craftOpen = this._invOpen = this._chestOpen = this._tradeOpen = false; G.audio.tone(660, 0.12, "triangle", 0.05); G.audio.tone(990, 0.14, "triangle", 0.05); G.shake(4); },
+    openPerks() { this._perkChoices = this.rollPerks(); this._perkOpen = true; this._craftOpen = this._invOpen = this._chestOpen = this._tradeOpen = false; G.audio.levelup(); G.shake(4); },
     rollPerks() {
       const pool = PERKS.filter(p => p.repeat || !G.state.perks[p.k]).slice(), out = [];
       while (out.length < 3 && pool.length) out.push(pool.splice((Math.random() * pool.length) | 0, 1)[0]);
@@ -721,7 +721,8 @@
       } else if ((this.mobTarget = this.acting ? this.nearestMob() : null)) {
         this.target = null; this._weak = false; this.mineT = 0;
         this.swingT += dt * 3.6;
-        if (this.swingT >= 1) { this.swingT = 0; G.hitMob(this, this.mobTarget, G.playerAtk() + (this._strT > 0 ? 2 : 0)); }
+        if (this.swingT >= 1) { this.swingT = 0; const _eit = G.ITEMS[(G.invSel() || {}).item], _mt = this.mobTarget; G.hitMob(this, _mt, G.playerAtk() + (this._strT > 0 ? 2 : 0));
+          if (_mt && !_mt._dead && _eit && _eit.elem) { if (_eit.elem === "fire") { _mt.onFire = 2.5; G.fx.burst(_mt.x, _mt.y - 6, "#ff8a3a", 10, 150, 0.4); G.audio.fire(); } else { _mt.stun = Math.max(_mt.stun || 0, 1.0); G.fx.burst(_mt.x, _mt.y - 6, "#9fe6ff", 10, 130, 0.4); G.audio.frost(); } } } // 🔥❄ зачарованный меч
       } else {
         let target = null;
         if (this.acting) target = this.nearestMinable();

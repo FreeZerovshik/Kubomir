@@ -41,6 +41,7 @@
     if (mu.hurtT > 0) mu.hurtT -= dt;
     if (mu.atkCd > 0) mu.atkCd -= dt;
     if (mu.shotCd > 0) mu.shotCd -= dt;
+    if (mu.onFire > 0) { mu.onFire -= dt; mu._fireDot = (mu._fireDot || 0) + dt; if (mu._fireDot >= 0.5) { mu._fireDot = 0; mu.hp -= 1; G.fx.burst(mu.x, mu.y - 4, "#ff8a3a", 4, 90, 0.3); if (mu.hp <= 0) { G.killMob(s, mu); return; } } } // 🔥 горение от огненного меча
     const K = mu.K;
     if (K.passive) { G._updatePassive(s, mu, dt); return; }   // мирные звери — без горения/атаки
     if (G.state.depth === 0 && G.daylight() > 0.6) { mu.burn += dt; if (mu.burn > 2.5) { mu._dead = true; G.fx.burst(mu.x, mu.y - 8, "#ffae5a", 10, 120, 0.5); return; } } // горят только на поверхности днём
@@ -135,22 +136,31 @@
   };
 
   // Игрок бьёт моба.
+  G.killMob = function (s, mu) {        // 💀 смерть моба: FX + дроп + опыт + спец-награды (общий путь: удар И огонь)
+    mu._dead = true;
+    G.fx.burst(mu.x, mu.y - 8, mu.K.color, 22, 200, 0.65); G.fx.burst(mu.x, mu.y - 6, mu.K.colorDk, 14, 150, 0.5);
+    G.fx.ring(mu.x, mu.y, "#fff", 28, 0.22); G.fx.ring(mu.x, mu.y, mu.K.color, 48, 0.45); G.audio.death();
+    if (mu.K.drop) { const dn = mu.K.dropN || 1; G.invAdd(mu.K.drop, dn); const di = G.ITEMS[mu.K.drop]; if (s.addFloater) s.addFloater(mu.x, mu.y - 14, "+" + (di ? di.icon : "?") + (dn > 1 ? "×" + dn : ""), "#bdf0a8"); }
+    if (!mu.K.passive && G.state.quests) G.state.quests.fight = 1;
+    if (!mu.K.passive) G.state.qkills = (G.state.qkills || 0) + 1;
+    if (s.addXp) s.addXp(mu.K.boss ? 30 : mu.K.miniboss ? 25 : mu.K.passive ? 2 : 6);
+    if (mu.kind === "golem") { G.state.maxHp += 4; G.state.hp = G.state.maxHp; G.state.templeCleared = 1; G.shake(18); G.fx.ring(mu.x, mu.y, "#ff7aa8", 120, 0.9); G.fx.burst(mu.x, mu.y - 8, "#ff8ab0", 24, 200, 0.8); }
+    if (mu.K.split && s.mobs.length < 24) { for (let q = 0; q < 2; q++) s.mobs.push(G.makeMob(mu.x + (q ? 16 : -16), mu.y + 6, "slime_small")); }
+    if (mu.K.boss) { G.state.bossDefeated = 1; G.invAdd("crown", 1); G.shake(20); G.fx.ring(mu.x, mu.y, "#ffce4a", 130, 0.9); G.fx.burst(mu.x, mu.y - 8, "#ffd24a", 26, 220, 0.8); G.audio.tone(520, 0.5, "triangle", 0.06); }
+  };
   G.hitMob = function (s, mu, dmg) {
     if (mu.K.trader) { mu.flee = 4; mu.hurtT = 0.18; const dx = mu.x - s.px, dy = mu.y - s.py, d = Math.hypot(dx, dy) || 1; mu.x += (dx / d) * 18; mu.y += (dy / d) * 18; G.audio.blip(); return; } // житель неуязвим — только отбегает
     const crit = Math.random() < (0.08 + Math.min(0.42, (s._combo || 0) * 0.03)); if (crit) dmg = Math.round(dmg * 2); // 💥 крит (шанс растёт с комбо)
     mu.hp -= dmg; mu.hurtT = 0.18; mu.flee = 4;
     if (s.addFloater) s.addFloater(mu.x + (Math.random() * 10 - 5), mu.y - mu.K.r - 6, crit ? "−" + dmg + "!" : "−" + dmg, crit ? "#ffe04a" : "#ff8a7a"); // 🔢 число урона (крит жёлтым)
-    if (crit) { G.fx.burst(mu.x, mu.y - 6, "#ffe04a", 14, 200, 0.5); G.fx.ring(mu.x, mu.y, "#ffe04a", 30, 0.3); G.shake(9); G.hitStop(0.06); }
+    if (crit) { G.fx.burst(mu.x, mu.y - 6, "#ffe04a", 14, 200, 0.5); G.fx.ring(mu.x, mu.y, "#ffe04a", 30, 0.3); G.shake(9); G.hitStop(0.06); G.audio.crit(); }
     if (!mu.K.passive) { s._combo = (s._combo || 0) + 1; s._comboT = 1.8; }   // 🔥 комбо-счётчик
     const dx = mu.x - s.px, dy = mu.y - s.py, d = Math.hypot(dx, dy) || 1;
     mu.x += (dx / d) * 14; mu.y += (dy / d) * 14; mu.stun = Math.max(mu.stun, 0.12);
     G.fx.burst(mu.x, mu.y - 6, mu.K.colorDk, 8, 130, 0.4);
     if (G.fx.ring) G.fx.ring(mu.x, mu.y - 4, "#fff", 22, 0.22);   // 💥 вспышка удара
     G.shake(5); G.hitStop(0.04);
-    if (mu.hp <= 0) { mu._dead = true; G.fx.burst(mu.x, mu.y - 8, mu.K.color, 22, 200, 0.65); G.fx.burst(mu.x, mu.y - 6, mu.K.colorDk, 14, 150, 0.5); G.fx.ring(mu.x, mu.y, "#fff", 28, 0.22); G.fx.ring(mu.x, mu.y, mu.K.color, 48, 0.45); G.audio.pop(); // 💀 разлёт на части if (mu.K.drop) { const dn = mu.K.dropN || 1; G.invAdd(mu.K.drop, dn); const di = G.ITEMS[mu.K.drop]; if (s.addFloater) s.addFloater(mu.x, mu.y - 14, "+" + (di ? di.icon : "?") + (dn > 1 ? "×" + dn : ""), "#bdf0a8"); } if (!mu.K.passive && G.state.quests) G.state.quests.fight = 1; if (!mu.K.passive) G.state.qkills = (G.state.qkills || 0) + 1; if (s.addXp) s.addXp(mu.K.boss ? 30 : mu.K.miniboss ? 25 : mu.K.passive ? 2 : 6); // 🆙 опыт + 🗨 счётчик убийств
-      if (mu.kind === "golem") { G.state.maxHp += 4; G.state.hp = G.state.maxHp; G.state.templeCleared = 1; G.shake(18); G.fx.ring(mu.x, mu.y, "#ff7aa8", 120, 0.9); G.fx.burst(mu.x, mu.y - 8, "#ff8ab0", 24, 200, 0.8); } // ⚔ сердце-контейнер за Стража Храма
-      if (mu.K.split && s.mobs.length < 24) { for (let q = 0; q < 2; q++) s.mobs.push(G.makeMob(mu.x + (q ? 16 : -16), mu.y + 6, "slime_small")); } // 🟢 слизень делится
-      if (mu.K.boss) { G.state.bossDefeated = 1; G.invAdd("crown", 1); G.shake(20); G.fx.ring(mu.x, mu.y, "#ffce4a", 130, 0.9); G.fx.burst(mu.x, mu.y - 8, "#ffd24a", 26, 220, 0.8); G.audio.tone(520, 0.5, "triangle", 0.06); } }
+    if (mu.hp <= 0) G.killMob(s, mu);
     else { G.audio.hit(); if ((s._combo || 0) > 1) G.audio.tone(280 + Math.min(s._combo, 12) * 22, 0.04, "square", 0.035); } // звук растёт с комбо
   };
 
@@ -291,7 +301,7 @@
       ctx.fillStyle = "#ffd24a"; ctx.fillRect(-19, -25, 38, 4);                                          // обод короны
       for (let c = -1; c <= 1; c++) { ctx.beginPath(); ctx.moveTo(c * 13 - 5, -25); ctx.lineTo(c * 13, -39); ctx.lineTo(c * 13 + 5, -25); ctx.closePath(); ctx.fill(); }
     }
-    if (mu.burn > 0) { ctx.fillStyle = "rgba(255,150,60,0.45)"; circle(ctx, 0, -4, K.r + 3); }
+    if (mu.burn > 0 || mu.onFire > 0) { ctx.fillStyle = "rgba(255,150,60,0.45)"; circle(ctx, 0, -4, K.r + 3); if (mu.onFire > 0) { ctx.fillStyle = "rgba(255,210,90,0.6)"; for (let q = -1; q <= 1; q++) circle(ctx, q * 6, -K.r - 2 - Math.abs(Math.sin(G.time * 12 + q + mu.x)) * 4, 3); } } // 🔥 язычки пламени
     ctx.restore();
     if (mu.hp < mu.maxHp) {
       const w = Math.max(30, K.r * 1.7), p = clamp(mu.hp / mu.maxHp, 0, 1), by2 = y - K.r - 16, h = (K.boss || K.miniboss) ? 7 : 5;

@@ -321,6 +321,11 @@
     pop() { this.tone(420, 0.07, "triangle", 0.06); this.tone(700, 0.1, "triangle", 0.05); },
     pickup() { this.tone(640, 0.07, "triangle", 0.06); setTimeout(() => this.tone(960, 0.1, "triangle", 0.05), 55); },
     hit() { this.tone(130, 0.16, "sawtooth", 0.08); },
+    death() { this.tone(240, 0.08, "sawtooth", 0.06); setTimeout(() => this.tone(120, 0.18, "sawtooth", 0.06), 55); setTimeout(() => this.tone(70, 0.22, "triangle", 0.05), 120); }, // 💀 нисходящий
+    crit() { this.tone(900, 0.05, "square", 0.06); setTimeout(() => this.tone(1350, 0.1, "square", 0.05), 28); },                 // 💥 резкий звон
+    fire() { this.tone(170 + Math.random() * 70, 0.06, "sawtooth", 0.05); this.tone(90, 0.1, "square", 0.03); },                  // 🔥 треск
+    frost() { this.tone(950, 0.08, "sine", 0.04); setTimeout(() => this.tone(1400, 0.12, "sine", 0.035), 40); },                  // ❄ звон льда
+    levelup() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.tone(f, 0.14, "triangle", 0.06), i * 70)); },       // 🆙 фанфара
   };
 
   /* ---- Процедурная фоновая музыка: лёгкий арп по настроению ---- */
