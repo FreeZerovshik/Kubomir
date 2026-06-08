@@ -1,0 +1,14 @@
+{
+  "name": "Кубомир",
+  "short_name": "Кубомир",
+  "description": "2D-Майнкрафт с видом сверху",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0b0f14",
+  "theme_color": "#7ec8ee",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

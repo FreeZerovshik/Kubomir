@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#7ec8ee" />
+  <title>Кубомир</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon.svg" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <!-- Загрузчик с cache-busting: правки js/*.js применяются по перезагрузке -->
+  <script>
+    (function () {
+      var t = Date.now();
+      ["js/engine.js", "js/world.js", "js/items.js", "js/entities.js", "js/scenes.js", "js/main.js"].forEach(function (src) {
+        document.write('<script src="' + src + '?t=' + t + '"><\/script>');
+      });
+    })();
+  </script>
+  <script>
+    // PWA: регистрируем service worker только в secure context (https/localhost)
+    if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
+      window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+    }
+  </script>
+</body>
+</html>

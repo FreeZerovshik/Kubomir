@@ -1,0 +1,19 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #0b0f14;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+#game {
+  position: absolute;
+  display: block;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  image-rendering: auto;
+}
