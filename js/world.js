@@ -298,8 +298,8 @@
       if (fbm(tx * 0.08, ty * 0.08, s, 4) > 0.56) { o[i] = 0; continue; }                    // открытая пещера
       const h = ihash(tx, ty, s + 91);
       if (depth >= 3 && h < 0.01) o[i] = OBJ.ghost_crystal;     // призрачные кристаллы — для портала
-      else if (depth >= 4 && h < 0.022) o[i] = OBJ.diamond;
-      else if (depth >= 4 && h < 0.034) o[i] = OBJ.emerald;     // 💚 изумруд (глубоко)
+      else if (depth >= 4 && h < 0.026) o[i] = OBJ.diamond;     // алмаз чуть доступнее: гейтит меч босса + базу зачарований
+      else if (depth >= 4 && h < 0.032) o[i] = OBJ.emerald;     // 💚 изумруд реже алмаза — настоящий топ-тир (кирка 12 > 9)
       else if (depth >= 3 && h < 0.04) o[i] = OBJ.gold;
       else if (h < 0.07) o[i] = OBJ.iron;
       else if (h < 0.15) o[i] = OBJ.coal;
