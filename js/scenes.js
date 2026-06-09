@@ -1107,6 +1107,7 @@
       ctx.font = G.f(15, "900"); ctx.fillText(_aLabel, cx, cy + 26);
 
       this.drawNextGoal(ctx);
+      this.drawGoalBeacon(ctx);
       this.drawHotbar(ctx);
     },
     drawNextGoal(ctx) {
@@ -1131,6 +1132,30 @@
       ctx.textAlign = "left"; ctx.font = txtF; ctx.fillStyle = done ? "#ffce4a" : "#fff"; ctx.fillText(txt, x0 + pad + iw + gap, y + h / 2 + 1);
       ctx.textAlign = "center";
       if (this._goalFlash > 0) { ctx.globalAlpha = clamp(this._goalFlash, 0, 1); ctx.fillStyle = "#7CFC8A"; ctx.font = G.f(20, "900"); ctx.fillText("✅ Цель выполнена!", VIEW.w / 2, 130); ctx.globalAlpha = 1; }
+    },
+    goalTarget() {     // 🧭 куда вести игрока по текущей цели (пока — вход в Храм; 6-летке иначе не найти)
+      if (!G.state.story || G.state.depth !== 0) return null;
+      let idx = -1; for (let i = 0; i < STORY.length; i++) if (!STORY[i].done()) { idx = i; break; }
+      if (idx === 6) {                 // Глава 7: очисти Храм → ближайший вход
+        const L = World.layers[0], ts = L && L.temples;
+        if (ts && ts.length) { let best = null, bd = 1e9; for (const t of ts) { const d = dist(this.px, this.py, t.x, t.y); if (d < bd) { bd = d; best = t; } } if (best) return { x: best.x, y: best.y, icon: "⚔" }; }
+      }
+      return null;
+    },
+    drawGoalBeacon(ctx) {
+      if (this._goalFlash > 0) return;            // не накладываться на «✅ Цель выполнена!»
+      const t = this.goalTarget(); if (!t) return;
+      const dx = t.x - this.px, dy = t.y - this.py, d = Math.hypot(dx, dy);
+      if (d < TILE * 1.5) return;                 // уже на месте — стрелка ни к чему (и не крутится)
+      const txt = t.icon + "  " + Math.max(1, Math.round(d / TILE)) + "м";
+      ctx.font = G.f(16, "900"); ctx.textBaseline = "middle"; ctx.textAlign = "left";
+      const tw = ctx.measureText(txt).width, aw = 30, pad = 13;
+      const bw = pad * 2 + aw + tw, x0 = VIEW.w / 2 - bw / 2, y = 124, h = 30, ay = y + h / 2;
+      ctx.fillStyle = PAL.panel; rr(ctx, x0, y, bw, h, 9); ctx.fill();
+      const ps = 1 + 0.12 * Math.sin(G.time * 5);     // пульс = «иди сюда»
+      ctx.save(); ctx.translate(x0 + pad + 11, ay); ctx.rotate(Math.atan2(dy, dx)); ctx.scale(ps, ps);
+      ctx.fillStyle = "#7CFC8A"; ctx.beginPath(); ctx.moveTo(11, 0); ctx.lineTo(-7, -7); ctx.lineTo(-3, 0); ctx.lineTo(-7, 7); ctx.closePath(); ctx.fill(); ctx.restore();
+      ctx.fillStyle = "#fff"; ctx.fillText(txt, x0 + pad + aw, ay + 1); ctx.textAlign = "center";
     },
 
     drawHotbar(ctx) {

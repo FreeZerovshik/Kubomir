@@ -277,13 +277,14 @@
       if (isFlatGrass(g, elev, vx, vy, 9)) vill = { x: vx, y: vy };
     }
     if (vill) for (let hi = 0; hi < 3; hi++) placeHut(o, g, vill.x + (hi - 1) * 6 - 2, vill.y - 1, s + hi * 13);
-    // ⚔ входы в Храм (2 шт, детерминированно, на доступной траве/песке)
-    for (let k = 0, temples = 0; k < 500 && temples < 2; k++) {
+    // ⚔ входы в Храм (2 шт, детерминированно, на доступной траве/песке) — позиции сохраняем для компаса-указателя
+    const templeList = [];
+    for (let k = 0; k < 500 && templeList.length < 2; k++) {
       const tx = 6 + ((ihash(k, 31, s + 700) * (W - 12)) | 0), ty = 6 + ((ihash(k, 37, s + 701) * (H - 12)) | 0), ii = ty * W + tx;
-      if ((g[ii] === GROUND.grass || g[ii] === GROUND.sand) && o[ii] === 0 && !cliff[ii]) { o[ii] = OBJ.temple_entrance; temples++; }
+      if ((g[ii] === GROUND.grass || g[ii] === GROUND.sand) && o[ii] === 0 && !cliff[ii]) { o[ii] = OBJ.temple_entrance; templeList.push({ x: tx * TILE + TILE / 2, y: ty * TILE + TILE / 2 }); }
     }
     const edits = {}; applyPending(o, g, "0", edits);
-    return { ground: g, obj: o, edits: edits, elev: elev, cliff: cliff, village: vill };
+    return { ground: g, obj: o, edits: edits, elev: elev, cliff: cliff, village: vill, temples: templeList };
   };
 
   World._genCave = function (depth) {
