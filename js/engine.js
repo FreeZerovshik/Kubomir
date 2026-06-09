@@ -64,6 +64,7 @@
       mp: 10, maxMp: 10,                          // ✨ мана для заклинаний (регенерирует)
       xp: 0, level: 1, perks: {},                 // 🆙 RPG-прогрессия: опыт/уровень/выбранные перки
       templeCleared: false,                       // ⚔ Страж Храма повержен (сердце-контейнер получен)
+      abyssDefeated: false,                        // 🕳 Глава 2: Повелитель Бездны повержен
       questId: null, qkills: 0, questBase: 0, questsDone: 0, // 🗨 квесты жителей (Fallout)
       quests: {},                                 // выполненные цели-подсказки (онбординг)
       story: false,                               // режим: false=свободный, true=сюжет

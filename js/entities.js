@@ -27,6 +27,7 @@
     wasp:    { name: "Оса", hp: 2, dmg: 2, speed: 122, r: 11, color: "#e0b020", colorDk: "#3a2e10", behavior: "chase", fast: true, atk: 0.6 }, // 🌴 джунгли: быстрый летун
     ghost:   { name: "Призрак", hp: 3, dmg: 2, speed: 62, r: 15, color: "#cfc2f0", colorDk: "#8a78c0", behavior: "chase", atk: 0.9, drop: "ghost_shard", dropN: 1, ghostly: true },
     ghost_king: { name: "Призрачный Король", hp: 30, dmg: 4, speed: 46, r: 26, color: "#c2a8ff", colorDk: "#6a3f9a", behavior: "chase", atk: 1.0, drop: "ghost_shard", dropN: 6, boss: true, ghostly: true },
+    abyss_lord: { name: "Повелитель Бездны", hp: 40, dmg: 5, speed: 44, r: 28, color: "#9a4fc8", colorDk: "#2e1640", behavior: "ranged", atk: 1.0, boss: true, ghostly: true }, // 🕳 финал Главы 2
   };
   G.MOB_KINDS = MOB_KINDS;
 
@@ -137,6 +138,7 @@
 
   // Игрок бьёт моба.
   G.killMob = function (s, mu) {        // 💀 смерть моба: FX + дроп + опыт + спец-награды (общий путь: удар И огонь)
+    if (mu._dead) return;               // идемпотентно: моб умирает один раз (иначе двойной дроп/опыт при 2 попаданиях в кадр)
     mu._dead = true;
     G.fx.burst(mu.x, mu.y - 8, mu.K.color, 22, 200, 0.65); G.fx.burst(mu.x, mu.y - 6, mu.K.colorDk, 14, 150, 0.5);
     G.fx.ring(mu.x, mu.y, "#fff", 28, 0.22); G.fx.ring(mu.x, mu.y, mu.K.color, 48, 0.45); G.audio.death();
@@ -146,10 +148,12 @@
     if (s.addXp) s.addXp(mu.K.boss ? 30 : mu.K.miniboss ? 25 : mu.K.passive ? 2 : 6);
     if (mu.kind === "golem") { G.state.maxHp += 4; G.state.hp = G.state.maxHp; G.state.templeCleared = 1; G.shake(18); G.fx.ring(mu.x, mu.y, "#ff7aa8", 120, 0.9); G.fx.burst(mu.x, mu.y - 8, "#ff8ab0", 24, 200, 0.8); }
     if (mu.K.split && s.mobs.length < 24) { for (let q = 0; q < 2; q++) s.mobs.push(G.makeMob(mu.x + (q ? 16 : -16), mu.y + 6, "slime_small")); }
-    if (mu.K.boss) { G.state.bossDefeated = 1; G.invAdd("crown", 1); G.shake(20); G.fx.ring(mu.x, mu.y, "#ffce4a", 130, 0.9); G.fx.burst(mu.x, mu.y - 8, "#ffd24a", 26, 220, 0.8); G.audio.tone(520, 0.5, "triangle", 0.06); }
+    if (mu.kind === "ghost_king") { G.state.bossDefeated = 1; G.invAdd("crown", 1); G.shake(20); G.fx.ring(mu.x, mu.y, "#ffce4a", 130, 0.9); G.fx.burst(mu.x, mu.y - 8, "#ffd24a", 26, 220, 0.8); G.audio.tone(520, 0.5, "triangle", 0.06); }
+    if (mu.kind === "abyss_lord") { G.state.abyssDefeated = 1; G.invAdd("crown", 1); G.shake(24); G.fx.ring(mu.x, mu.y, "#d24bff", 150, 1.0); G.fx.ring(mu.x, mu.y, "#fff", 90, 0.6); G.fx.burst(mu.x, mu.y - 8, "#c46bff", 30, 240, 0.9); G.audio.levelup(); } // 🕳 финал Главы 2
   };
   G.hitMob = function (s, mu, dmg) {
     if (mu.K.trader) { mu.flee = 4; mu.hurtT = 0.18; const dx = mu.x - s.px, dy = mu.y - s.py, d = Math.hypot(dx, dy) || 1; mu.x += (dx / d) * 18; mu.y += (dy / d) * 18; G.audio.blip(); return; } // житель неуязвим — только отбегает
+    if (mu._dead || mu.hp <= 0) return;   // не бьём труп: гасит двойной килл в один кадр + фантомные числа урона/накрутку комбо
     const crit = Math.random() < (0.08 + Math.min(0.42, (s._combo || 0) * 0.03)); if (crit) dmg = Math.round(dmg * 2); // 💥 крит (шанс растёт с комбо)
     mu.hp -= dmg; mu.hurtT = 0.18; mu.flee = 4;
     if (s.addFloater) s.addFloater(mu.x + (Math.random() * 10 - 5), mu.y - mu.K.r - 6, crit ? "−" + dmg + "!" : "−" + dmg, crit ? "#ffe04a" : "#ff8a7a"); // 🔢 число урона (крит жёлтым)
@@ -278,6 +282,14 @@
       ctx.fillStyle = flash ? "#fff" : K.color; G.rr(ctx, -8, -5, 16, 11, 5); ctx.fill();
       ctx.fillStyle = flash ? "#fff" : K.colorDk; ctx.fillRect(-3, -5, 3, 11); ctx.fillRect(3, -5, 3, 11);   // полоски
       if (!flash) { ctx.fillStyle = "#1a1a1a"; ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(13, 1); ctx.lineTo(8, 3); ctx.fill(); ctx.fillRect(5, -3, 2, 2); } // жало+глаз
+    } else if (mu.kind === "abyss_lord") {
+      const enr = mu.hp <= mu.maxHp * 0.4;
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = flash ? "#fff" : K.colorDk; G.rr(ctx, -24, -26, 48, 50, 18); ctx.fill();        // тёмный сгусток
+      ctx.fillStyle = flash ? "#fff" : K.color; for (let w = -2; w <= 2; w++) circle(ctx, w * 10, 22, 8); // щупальца-низ
+      ctx.globalAlpha = 1;
+      if (!flash) { ctx.fillStyle = "#1a0a24"; circle(ctx, 0, -6, 13); ctx.fillStyle = enr ? "#ff4b4b" : "#d24bff"; circle(ctx, 0, -6, 9); ctx.fillStyle = "#1a0a24"; circle(ctx, 0, -6, 4); ctx.fillStyle = "#fff"; circle(ctx, 3, -9, 2.5); } // огромный глаз
+      ctx.fillStyle = "#5a2f7a"; for (let c = -2; c <= 2; c++) { ctx.beginPath(); ctx.moveTo(c * 11 - 4, -26); ctx.lineTo(c * 11, -41); ctx.lineTo(c * 11 + 4, -26); ctx.closePath(); ctx.fill(); } // корона-шипы
     } else if (mu.kind === "golem") {
       ctx.fillStyle = flash ? "#fff" : K.colorDk; G.rr(ctx, -18, -20, 36, 38, 6); ctx.fill();      // каменное тело
       ctx.fillStyle = flash ? "#fff" : K.color; G.rr(ctx, -14, -16, 28, 18, 5); ctx.fill();          // грудь светлее

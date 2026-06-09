@@ -70,6 +70,10 @@
     { t: "Глава 3. Найди в глубине осколки духов 🔮 (нужно 4)", done: () => G.invCount("ghost_shard") >= 4 || G.invCount("portal") > 0 || G.state.quests.astral },
     { t: "Глава 4. Собери и поставь Портал 🌀", done: () => G.state.quests.portal },
     { t: "Глава 5. Победи Призрачного Короля 👑 в Мире Призраков!", done: () => G.state.bossDefeated },
+    { t: "Глава 6. Тьма не ушла… Овладей магией — сотвори заклинание ✨", done: () => G.state.quests.spell },
+    { t: "Глава 7. Древний Страж проснулся — очисти Храм ⚔", done: () => G.state.templeCleared },
+    { t: "Глава 8. Спустись в глубочайшую пещеру — там Бездна 🕳", done: () => G.state.quests.abyss },
+    { t: "Глава 9. Победи Повелителя Бездны 👁 и запечатай зло!", done: () => G.state.abyssDefeated },
   ];
 
   function circle(ctx, x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, PI * 2); ctx.fill(); }
@@ -181,6 +185,7 @@
       this.crops = []; this.pshots = []; this.petX = null;
       if (G.state.depth === 0) for (let i = 0; i < World.obj.length; i++) { const b = World.BLOCKS[World.obj[i]]; if (b && b.crop != null) this.crops.push({ tx: i % World.W, ty: (i / World.W) | 0, t: b.crop * 8, st: b.crop }); }
       if (G.state.depth === 0 && World.layers[0] && World.layers[0].village) { const v = World.layers[0].village; for (let i = 0; i < 3; i++) this.mobs.push(G.makeMob(v.x * TILE + TILE / 2 + (i - 1) * TILE * 2, (v.y + 3) * TILE + TILE / 2, "villager")); } // 🏘 жители
+      if (G.state.depth === 4 && G.state.bossDefeated) { G.state.quests.abyss = 1; if (!G.state.abyssDefeated) this.mobs.push(G.makeMob(this.px + TILE * 2, this.py, "abyss_lord")); } // 🕳 Глава 2: Повелитель Бездны в глубочайшей пещере
       this._invOpen = false; this._craftTab = 0; this._lastTransTile = null; this._won = false;
       this._chestOpen = false; this._chestKey = null; this._fishT = 0; this._tradeOpen = false; this._tradeMob = null;
       this.weather = "clear"; this._wxT = 30 + Math.random() * 40; this._flash = 0; this._wxAnim = 0; this._onBoat = false;
@@ -635,7 +640,7 @@
       const md = G.moveDir();
       const moving = md.mag > 0.12;
       if (this._dashT > 0) {                       // 🤸 перекат: рывок + i-кадры
-        this._dashT -= dt;
+        this._dashT = Math.max(0, this._dashT - dt);   // не оставляем таймер отрицательным (gotcha #1)
         const dsp = 560, nx = this.px + this._dashDX * dsp * dt, ny = this.py + this._dashDY * dsp * dt;
         if (!this.blocked(nx, this.py)) this.px = nx;
         if (!this.blocked(this.px, ny)) this.py = ny;
@@ -1317,8 +1322,8 @@
       ctx.fillStyle = g; ctx.fillRect(0, 0, VIEW.w, VIEW.h);
       for (let i = 0; i < 70; i++) { ctx.fillStyle = "rgba(200,180,255," + (0.25 + 0.5 * (((i * 7) % 5) / 5)) + ")"; ctx.fillRect((i * 137) % VIEW.w, (i * 89) % 430, 2, 2); }
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.font = G.f(64, "900"); ctx.fillStyle = "#ffce4a"; ctx.fillText("🏆 ПОБЕДА!", VIEW.w / 2, 170);
-      ctx.font = G.f(26, "bold"); ctx.fillStyle = "#fff"; ctx.fillText("Ты прошёл Мир Призраков и спас остров!", VIEW.w / 2, 244);
+      ctx.font = G.f(64, "900"); ctx.fillStyle = "#ffce4a"; ctx.fillText(G.state.abyssDefeated ? "🏆 ЛЕГЕНДА!" : "🏆 ПОБЕДА!", VIEW.w / 2, 170);
+      ctx.font = G.f(23, "bold"); ctx.fillStyle = "#fff"; ctx.fillText(G.state.abyssDefeated ? "Король повержен, Повелитель Бездны запечатан — ты спас оба мира!" : "Ты прошёл Мир Призраков и спас остров!", VIEW.w / 2, 244);
       ctx.font = G.f(18); ctx.fillStyle = "#cfc2f0"; ctx.fillText("Свободная игра продолжается — строй и исследуй дальше.", VIEW.w / 2, 282);
       ctx.save(); ctx.translate(VIEW.w / 2, 384); ctx.scale(2, 2); G.drawSteve(ctx, 0, 0, 1, 0, 0); ctx.restore();
       drawButton(ctx, vPlay, "▶ Играть дальше", PAL.btn);
