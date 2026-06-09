@@ -64,16 +64,16 @@
     { give: ["coal", 6], get: ["torch", 8] },
     { give: ["wool", 4], get: ["bed", 1] },
   ];
-  const STORY = [
-    { t: "Глава 1. Остров в беде — из глубин лезут тени. Сруби дерево 🌳", done: () => G.state.quests.chop },
-    { t: "Глава 2. Сделай кирку ⛏ и спустись в пещеру 🪜", done: () => G.state.quests.cave },
-    { t: "Глава 3. Найди в глубине осколки духов 🔮 (нужно 4)", done: () => G.invCount("ghost_shard") >= 4 || G.invCount("portal") > 0 || G.state.quests.astral },
-    { t: "Глава 4. Собери и поставь Портал 🌀", done: () => G.state.quests.portal },
-    { t: "Глава 5. Победи Призрачного Короля 👑 в Мире Призраков!", done: () => G.state.bossDefeated },
-    { t: "Глава 6. Тьма не ушла… Овладей магией — сотвори заклинание ✨", done: () => G.state.quests.spell },
-    { t: "Глава 7. Древний Страж проснулся — очисти Храм ⚔", done: () => G.state.templeCleared },
-    { t: "Глава 8. Спустись в глубочайшую пещеру — там Бездна 🕳", done: () => G.state.quests.abyss },
-    { t: "Глава 9. Победи Повелителя Бездны 👁 и запечатай зло!", done: () => G.state.abyssDefeated },
+  const STORY = [   // icon — крупный символ цели для не-читающего игрока (6 лет)
+    { icon: "🌳", t: "Глава 1. Остров в беде — из глубин лезут тени. Сруби дерево 🌳", done: () => G.state.quests.chop },
+    { icon: "⛏", t: "Глава 2. Сделай кирку ⛏ и спустись в пещеру 🪜", done: () => G.state.quests.cave },
+    { icon: "🔮", t: "Глава 3. Найди в глубине осколки духов 🔮 (нужно 4)", done: () => G.invCount("ghost_shard") >= 4 || G.invCount("portal") > 0 || G.state.quests.astral },
+    { icon: "🌀", t: "Глава 4. Собери и поставь Портал 🌀", done: () => G.state.quests.portal },
+    { icon: "👑", t: "Глава 5. Победи Призрачного Короля 👑 в Мире Призраков!", done: () => G.state.bossDefeated },
+    { icon: "✨", t: "Глава 6. Тьма не ушла… Овладей магией — сотвори заклинание ✨", done: () => G.state.quests.spell },
+    { icon: "⚔", t: "Глава 7. Древний Страж проснулся — очисти Храм ⚔", done: () => G.state.templeCleared },
+    { icon: "🕳", t: "Глава 8. Спустись в глубочайшую пещеру — там Бездна 🕳", done: () => G.state.quests.abyss },
+    { icon: "👁", t: "Глава 9. Победи Повелителя Бездны 👁 и запечатай зло!", done: () => G.state.abyssDefeated },
   ];
 
   function circle(ctx, x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, PI * 2); ctx.fill(); }
@@ -1094,25 +1094,42 @@
       ctx.fillStyle = this.acting ? PAL.btnDk : PAL.btn; circle(ctx, cx, cy, rad);
       ctx.fillStyle = "rgba(255,255,255,0.22)"; ctx.beginPath(); ctx.arc(cx, cy, rad, PI, PI * 2); ctx.fill();
       ctx.fillStyle = PAL.ink; ctx.textAlign = "center";
-      ctx.font = G.f(44); ctx.fillText("⛏", cx, cy - 6);
-      ctx.font = G.f(15, "900"); ctx.fillText("ДОБЫТЬ", cx, cy + 26);
+      // 👶 кнопка действия адаптируется под выбранный предмет: ребёнок видит ГЛАГОЛ по символу
+      // (каст/стрельба/рыбалка иначе скрыты — большая кнопка всегда говорила «ДОБЫТЬ»)
+      let _aIcon = "⛏", _aLabel = "ДОБЫТЬ";
+      { const _z = G.invSel(), _it = _z && G.ITEMS[_z.item];
+        if (_it && _it.spell) { _aIcon = "✨"; _aLabel = "КОЛДУЙ"; }
+        else if (_z && _z.item === "bow") { _aIcon = "🏹"; _aLabel = "СТРЕЛЯЙ"; }
+        else if (_z && _z.item === "fishing_rod" && this.nearWater()) { _aIcon = "🎣"; _aLabel = "ЛОВИ"; }
+        else if (_it && _it.weapon) { _aIcon = "⚔"; _aLabel = "БЕЙ"; }
+      }
+      ctx.font = G.f(42); ctx.fillText(_aIcon, cx, cy - 6);
+      ctx.font = G.f(15, "900"); ctx.fillText(_aLabel, cx, cy + 26);
 
       this.drawNextGoal(ctx);
       this.drawHotbar(ctx);
     },
     drawNextGoal(ctx) {
-      let txt, done = false;
+      let icon = "🎯", txt, done = false;
       if (G.state.story) {
         let ch = null; for (const c of STORY) if (!c.done()) { ch = c; break; }
-        if (ch) txt = "📖 " + ch.t; else { txt = "🏆 История пройдена — играй дальше!"; done = true; }
+        if (ch) { icon = ch.icon || "📖"; txt = ch.t; } else { icon = "🏆"; txt = "История пройдена — играй дальше!"; done = true; }
       } else {
         let g = null; for (const q of QUESTS) if (!q.done()) { g = q; break; }
-        if (g) txt = "🎯 " + g.icon + " " + g.text; else { txt = "🏆 Основы пройдены — стройся и исследуй!"; done = true; }
+        if (g) { icon = g.icon; txt = g.text; } else { icon = "🏆"; txt = "Основы пройдены — стройся и исследуй!"; done = true; }
       }
-      ctx.font = G.f(18, "bold"); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      const w = ctx.measureText(txt).width + 30;
-      ctx.fillStyle = PAL.panel; rr(ctx, VIEW.w / 2 - w / 2, 84, w, 34, 10); ctx.fill();
-      ctx.fillStyle = done ? "#ffce4a" : "#fff"; ctx.fillText(txt, VIEW.w / 2, 84 + 18);
+      // 👶 для не-читающего 6-летки: крупная пульсирующая ИКОНКА слева, текст — для тех, кто читает
+      ctx.textBaseline = "middle";
+      const iconF = G.f(28), txtF = G.f(18, "bold"), gap = 9, pad = 15;
+      ctx.font = txtF; const tw = ctx.measureText(txt).width;
+      ctx.font = iconF; const iw = ctx.measureText(icon).width;
+      const bw = pad * 2 + iw + gap + tw, x0 = VIEW.w / 2 - bw / 2, y = 84, h = 38;
+      ctx.fillStyle = PAL.panel; rr(ctx, x0, y, bw, h, 11); ctx.fill();
+      const pulse = done ? 1 : 1 + 0.08 * Math.sin(G.time * 4);   // лёгкая пульсация = «смотри сюда»
+      ctx.save(); ctx.translate(x0 + pad + iw / 2, y + h / 2); ctx.scale(pulse, pulse);
+      ctx.font = iconF; ctx.textAlign = "center"; ctx.fillStyle = "#fff"; ctx.fillText(icon, 0, 1); ctx.restore();
+      ctx.textAlign = "left"; ctx.font = txtF; ctx.fillStyle = done ? "#ffce4a" : "#fff"; ctx.fillText(txt, x0 + pad + iw + gap, y + h / 2 + 1);
+      ctx.textAlign = "center";
       if (this._goalFlash > 0) { ctx.globalAlpha = clamp(this._goalFlash, 0, 1); ctx.fillStyle = "#7CFC8A"; ctx.font = G.f(20, "900"); ctx.fillText("✅ Цель выполнена!", VIEW.w / 2, 130); ctx.globalAlpha = 1; }
     },
 
