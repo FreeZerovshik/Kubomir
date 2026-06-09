@@ -67,7 +67,8 @@
     }
     if (beh === "fuse") {                          // крипер: подходит, фитиль → взрыв
       if (mu.fuse > 0 || d < s.r + K.r + 16) {
-        mu.fuse += dt;
+        const prev = mu.fuse; mu.fuse += dt;
+        if (prev === 0 || ((mu.fuse / 0.4) | 0) > ((prev / 0.4) | 0)) G.audio.hiss(); // 🔊 шипение фитиля: старт + тик → «Ssss…ss…BOOM»
         if (mu.fuse > 1.2) { G.creeperBoom(s, mu); mu._dead = true; }
         return;
       }

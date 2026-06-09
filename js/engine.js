@@ -326,6 +326,15 @@
     crit() { this.tone(900, 0.05, "square", 0.06); setTimeout(() => this.tone(1350, 0.1, "square", 0.05), 28); },                 // 💥 резкий звон
     fire() { this.tone(170 + Math.random() * 70, 0.06, "sawtooth", 0.05); this.tone(90, 0.1, "square", 0.03); },                  // 🔥 треск
     frost() { this.tone(950, 0.08, "sine", 0.04); setTimeout(() => this.tone(1400, 0.12, "sine", 0.035), 40); },                  // ❄ звон льда
+    hiss() {                                                                                                                       // 💥 фитиль крипера — «Ssss» (белый шум через highpass)
+      if (!G.state.sound || !this.ctx) return;
+      const t = this.ctx.currentTime, dur = 0.5;
+      if (!this._noiseBuf) { const n = (this.ctx.sampleRate * 0.5) | 0; this._noiseBuf = this.ctx.createBuffer(1, n, this.ctx.sampleRate); const d = this._noiseBuf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; }
+      const src = this.ctx.createBufferSource(); src.buffer = this._noiseBuf;
+      const bp = this.ctx.createBiquadFilter(); bp.type = "highpass"; bp.frequency.value = 1800;
+      const g = this.ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(bp); bp.connect(g); g.connect(this.ctx.destination); src.start(t); src.stop(t + dur);
+    },
     levelup() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.tone(f, 0.14, "triangle", 0.06), i * 70)); },       // 🆙 фанфара
   };
 
