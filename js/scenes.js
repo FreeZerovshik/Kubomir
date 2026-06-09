@@ -450,6 +450,11 @@
     drawSpellShots(ctx) {
       for (const a of this.spellShots) {
         const c1 = a.elem === "fire" ? "#ffce4a" : "#cfeeff", c2 = a.elem === "fire" ? "#ff6a2a" : "#5ac8ff";
+        const sp = Math.hypot(a.vx, a.vy) || 1, ux = a.vx / sp, uy = a.vy / sp;
+        for (let t = 4; t >= 1; t--) {                       // 🔥 хвост по направлению полёта
+          ctx.globalAlpha = 0.30 * (1 - t / 5); ctx.fillStyle = c2;
+          circle(ctx, a.x - ux * t * 7, a.y - uy * t * 7, 5.6 - t * 0.9);
+        }
         ctx.globalAlpha = 0.5; ctx.fillStyle = c2; circle(ctx, a.x, a.y, 8); ctx.globalAlpha = 1;
         ctx.fillStyle = c2; circle(ctx, a.x, a.y, 6); ctx.fillStyle = c1; circle(ctx, a.x, a.y, 3.5);
       }
@@ -517,7 +522,7 @@
       if (mu) dmg = Math.max(1, Math.round(dmg * (1 - Math.min(0.85, G.shieldReduce() + G.armorDefense() + (G.state.perks.tough ? 0.15 : 0))))); // щит + броня + перк
       G.state.hp = Math.max(0, G.state.hp - dmg);
       this._invuln = 0.6; this._dmgFlash = 0.4;
-      if (mu) { const dx = this.px - mu.x, dy = this.py - mu.y, d = Math.hypot(dx, dy) || 1, nx = this.px + (dx / d) * 13, ny = this.py + (dy / d) * 13; if (!this.blocked(nx, this.py)) this.px = nx; if (!this.blocked(this.px, ny)) this.py = ny; } // отдача от удара
+      if (mu && isFinite(mu.x) && isFinite(mu.y)) { const dx = this.px - mu.x, dy = this.py - mu.y, d = Math.hypot(dx, dy) || 1, nx = this.px + (dx / d) * 13, ny = this.py + (dy / d) * 13; if (!this.blocked(nx, this.py)) this.px = nx; if (!this.blocked(this.px, ny)) this.py = ny; } // отдача от удара (только от источника с координатами — иначе px стал бы NaN)
       G.shake(8); G.audio.hit();
       if (G.state.hp <= 0) this.die();
     },
@@ -827,6 +832,7 @@
       G.drawLight(ctx, this);
       this.drawWeather(ctx);
       this.drawTempOverlay(ctx);
+      this.drawAbyssAmbient(ctx);
       if (this._dmgFlash > 0) { ctx.fillStyle = `rgba(200,30,30,${(0.45 * this._dmgFlash / 0.4).toFixed(3)})`; ctx.fillRect(0, 0, VIEW.w, VIEW.h); }
       this.drawHUD(ctx);
       this.drawMinimap(ctx);
@@ -970,11 +976,17 @@
       if (!ready) { ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(cx, cy, rad - 3, -PI / 2, -PI / 2 + (1 - this._dashCd / 0.85) * PI * 2); ctx.stroke(); }
     },
     addFloater(x, y, text, color) { this._floaters.push({ x: x, y: y, text: text, color: color || "#fff", life: 1.1 }); },
-    goalTarget() {        // мировая точка текущей визуальной цели — стрелка для нечитающего игрока
+    goalTarget() {        // мировая точка текущей визуальной цели (плавающая стрелка + HUD-компас для нечитающего игрока)
       if (G.state.depth !== 0) return null;
-      let want = null;
-      if (!G.state.quests.chop) want = World.OBJ.tree;                              // 1-я цель: дерево
-      else if (G.toolPower() > 1 && !G.state.quests.cave) want = World.OBJ.cave_entrance; // потом: вход в пещеру
+      // дальняя цель: Храм (Глава 7) — координаты известны из генерации, не сканом
+      if (G.state.story && G.state.bossDefeated && G.state.quests.spell && !G.state.templeCleared) {
+        const ts = (World.layers[0] || {}).temples;
+        if (ts && ts.length) { let bt = null, btd = 1e9; for (const t of ts) { const d = dist(this.px, this.py, t.x, t.y); if (d < btd) { btd = d; bt = t; } } if (bt) return { x: bt.x, y: bt.y, icon: "⚔" }; }
+      }
+      // ближние цели: дерево / вход в пещеру — скан вокруг игрока
+      let want = null, icon = null;
+      if (!G.state.quests.chop) { want = World.OBJ.tree; icon = "🌳"; }              // 1-я цель: дерево
+      else if (G.toolPower() > 1 && !G.state.quests.cave) { want = World.OBJ.cave_entrance; icon = "🪜"; } // потом: вход в пещеру
       if (want == null) return null;
       const ptx = Math.floor(this.px / TILE), pty = Math.floor(this.py / TILE), R = 18;
       let best = null, bd = 1e9;
@@ -982,7 +994,7 @@
         if (World.oTile(ptx + dx, pty + dy) !== want) continue;
         const d = dx * dx + dy * dy; if (d < bd) { bd = d; best = { tx: ptx + dx, ty: pty + dy }; }
       }
-      return best ? { x: best.tx * TILE + TILE / 2, y: best.ty * TILE + TILE / 2 } : null;
+      return best ? { x: best.tx * TILE + TILE / 2, y: best.ty * TILE + TILE / 2, icon: icon } : null;
     },
     drawGoalPointer(ctx) {
       const t = this.goalTarget(); if (!t) return;
@@ -1133,20 +1145,13 @@
       ctx.textAlign = "center";
       if (this._goalFlash > 0) { ctx.globalAlpha = clamp(this._goalFlash, 0, 1); ctx.fillStyle = "#7CFC8A"; ctx.font = G.f(20, "900"); ctx.fillText("✅ Цель выполнена!", VIEW.w / 2, 130); ctx.globalAlpha = 1; }
     },
-    goalTarget() {     // 🧭 куда вести игрока по текущей цели (пока — вход в Храм; 6-летке иначе не найти)
-      if (!G.state.story || G.state.depth !== 0) return null;
-      let idx = -1; for (let i = 0; i < STORY.length; i++) if (!STORY[i].done()) { idx = i; break; }
-      if (idx === 6) {                 // Глава 7: очисти Храм → ближайший вход
-        const L = World.layers[0], ts = L && L.temples;
-        if (ts && ts.length) { let best = null, bd = 1e9; for (const t of ts) { const d = dist(this.px, this.py, t.x, t.y); if (d < bd) { bd = d; best = t; } } if (best) return { x: best.x, y: best.y, icon: "⚔" }; }
-      }
-      return null;
-    },
-    drawGoalBeacon(ctx) {
+    drawGoalBeacon(ctx) {               // HUD-компас к ДАЛЁКОЙ цели (за краем экрана); ближние ведёт плавающая стрелка drawGoalPointer
       if (this._goalFlash > 0) return;            // не накладываться на «✅ Цель выполнена!»
-      const t = this.goalTarget(); if (!t) return;
+      const t = this.goalTarget(); if (!t || !t.icon) return;
+      const sx = t.x - G.cam.x, sy = t.y - G.cam.y;
+      if (sx > 40 && sx < VIEW.w - 40 && sy > 96 && sy < VIEW.h - 130) return;   // цель на экране — хватит стрелки над целью
       const dx = t.x - this.px, dy = t.y - this.py, d = Math.hypot(dx, dy);
-      if (d < TILE * 1.5) return;                 // уже на месте — стрелка ни к чему (и не крутится)
+      if (d < TILE * 1.5) return;                 // уже на месте
       const txt = t.icon + "  " + Math.max(1, Math.round(d / TILE)) + "м";
       ctx.font = G.f(16, "900"); ctx.textBaseline = "middle"; ctx.textAlign = "left";
       const tw = ctx.measureText(txt).width, aw = 30, pad = 13;
@@ -1156,6 +1161,20 @@
       ctx.save(); ctx.translate(x0 + pad + 11, ay); ctx.rotate(Math.atan2(dy, dx)); ctx.scale(ps, ps);
       ctx.fillStyle = "#7CFC8A"; ctx.beginPath(); ctx.moveTo(11, 0); ctx.lineTo(-7, -7); ctx.lineTo(-3, 0); ctx.lineTo(-7, 7); ctx.closePath(); ctx.fill(); ctx.restore();
       ctx.fillStyle = "#fff"; ctx.fillText(txt, x0 + pad + aw, ay + 1); ctx.textAlign = "center";
+    },
+    drawAbyssAmbient(ctx) {
+      if (G.state.depth !== 4) return;            // 🕳 атмосфера только в глубочайшей пещере = Бездне
+      const g = ctx.createRadialGradient(VIEW.w / 2, VIEW.h / 2, VIEW.h * 0.28, VIEW.w / 2, VIEW.h / 2, VIEW.h * 0.86);
+      g.addColorStop(0, "rgba(60,20,90,0)"); g.addColorStop(1, "rgba(44,12,70,0.36)");   // фиолетовая виньетка
+      ctx.fillStyle = g; ctx.fillRect(0, 0, VIEW.w, VIEW.h);
+      for (let i = 0; i < 18; i++) {              // восходящие искры пустоты (детерминированно от G.time — без мерцания)
+        const x = G.ihash(i, 3, 77) * VIEW.w, spd = 13 + (i % 5) * 5;
+        const y = VIEW.h + 20 - ((G.time * spd + i * 71) % (VIEW.h + 60));
+        const tw = 0.45 + 0.55 * Math.abs(Math.sin(G.time * 2 + i));
+        ctx.globalAlpha = 0.55 * tw; ctx.fillStyle = i % 3 === 0 ? "#d24bff" : "#7a4fb8";
+        circle(ctx, x, y, 1.6 + (i % 3) * 0.7);
+      }
+      ctx.globalAlpha = 1;
     },
 
     drawHotbar(ctx) {

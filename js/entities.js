@@ -110,7 +110,7 @@
     for (let i = s.shots.length - 1; i >= 0; i--) {
       const a = s.shots[i]; a.x += a.vx * dt; a.y += a.vy * dt; a.life -= dt;
       if (a.life <= 0 || G.World.solidPx(a.x, a.y)) { s.shots.splice(i, 1); continue; }
-      if (G.dist(a.x, a.y, s.px, s.py) < s.r + 5) { s.hurt(a.dmg, { ranged: true }); s.shots.splice(i, 1); }
+      if (G.dist(a.x, a.y, s.px, s.py) < s.r + 5) { s.hurt(a.dmg, { x: a.x, y: a.y, ranged: true }); s.shots.splice(i, 1); }
     }
   };
   G.drawShots = function (ctx, s) {
@@ -284,6 +284,17 @@
       if (!flash) { ctx.fillStyle = "#1a1a1a"; ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(13, 1); ctx.lineTo(8, 3); ctx.fill(); ctx.fillRect(5, -3, 2, 2); } // жало+глаз
     } else if (mu.kind === "abyss_lord") {
       const enr = mu.hp <= mu.maxHp * 0.4;
+      const pz = G.time * (enr ? 4.2 : 2.6);
+      if (!flash) {                                          // 🕳 аура Бездны: пульсирующее свечение + орбитальные искры
+        const ar = 42 + 5 * Math.sin(pz);
+        const grd = ctx.createRadialGradient(0, -4, 6, 0, -4, ar);
+        grd.addColorStop(0, enr ? "rgba(255,70,70,0.50)" : "rgba(176,86,210,0.48)");
+        grd.addColorStop(0.55, enr ? "rgba(120,24,44,0.20)" : "rgba(92,42,140,0.20)");
+        grd.addColorStop(1, "rgba(18,7,28,0)");
+        ctx.fillStyle = grd; circle(ctx, 0, -4, ar);
+        ctx.fillStyle = enr ? "#ff8a8a" : "#cf9bff";
+        for (let i = 0; i < 4; i++) { const aa = pz + i * (Math.PI / 2), orb = 31 + 3 * Math.sin(pz * 1.5 + i); circle(ctx, Math.cos(aa) * orb, -4 + Math.sin(aa) * orb * 0.55, 2.3); }
+      }
       ctx.globalAlpha = 0.92;
       ctx.fillStyle = flash ? "#fff" : K.colorDk; G.rr(ctx, -24, -26, 48, 50, 18); ctx.fill();        // тёмный сгусток
       ctx.fillStyle = flash ? "#fff" : K.color; for (let w = -2; w <= 2; w++) circle(ctx, w * 10, 22, 8); // щупальца-низ
