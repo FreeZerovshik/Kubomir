@@ -186,7 +186,8 @@
       if (G.state.depth === 0) for (let i = 0; i < World.obj.length; i++) { const b = World.BLOCKS[World.obj[i]]; if (b && b.crop != null) this.crops.push({ tx: i % World.W, ty: (i / World.W) | 0, t: b.crop * 8, st: b.crop }); }
       if (G.state.depth === 0 && World.layers[0] && World.layers[0].village) { const v = World.layers[0].village; for (let i = 0; i < 3; i++) this.mobs.push(G.makeMob(v.x * TILE + TILE / 2 + (i - 1) * TILE * 2, (v.y + 3) * TILE + TILE / 2, "villager")); } // 🏘 жители
       if (G.state.depth === 4 && G.state.bossDefeated) { G.state.quests.abyss = 1; if (!G.state.abyssDefeated) this.mobs.push(G.makeMob(this.px + TILE * 2, this.py, "abyss_lord")); } // 🕳 Глава 2: Повелитель Бездны в глубочайшей пещере
-      this._invOpen = false; this._craftTab = 0; this._lastTransTile = null; this._won = false;
+      this._invOpen = false; this._craftTab = 0; this._won = false;
+      this._lastTransTile = Math.floor(this.px / TILE) + "," + Math.floor(this.py / TILE); // спавн/загрузочный тайл не должен сам сработать как лестница (фикс дрейфа глубины при автосейве на переходе)
       this._chestOpen = false; this._chestKey = null; this._fishT = 0; this._tradeOpen = false; this._tradeMob = null;
       this.weather = "clear"; this._wxT = 30 + Math.random() * 40; this._flash = 0; this._wxAnim = 0; this._onBoat = false;
       this._goalsDone = null; this._goalFlash = 0; this._floaters = []; this.spellShots = []; this._perkOpen = false; this._perksPending = 0;
