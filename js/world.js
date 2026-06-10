@@ -32,7 +32,7 @@
   G.ihash = ihash;
 
   /* ---- Грунт (значения в ground[]) ---- */
-  const GROUND = { water: 0, sand: 1, grass: 2, dirt: 3, stone: 4, snow: 5, cavefloor: 6, astral: 7, swamp: 8, jungle: 9, mycelium: 10 };
+  const GROUND = { water: 0, sand: 1, grass: 2, dirt: 3, stone: 4, snow: 5, cavefloor: 6, astral: 7, swamp: 8, jungle: 9, mycelium: 10, volcanic: 11, lava: 12 };
   /* ---- Объекты (индекс = значение в obj[]; 0 = пусто). Data-driven (OCP) ---- */
   const BLOCKS = [
     null,
@@ -128,6 +128,9 @@
   BLOCKS.push({ id: "vine", name: "Лиана", solid: false, hardness: 0.3, drop: "stick", yield: 1, tier: 1, deco: true });
   BLOCKS.push({ id: "emerald", name: "Изумруд", solid: true, hardness: 7, drop: "emerald", yield: 1, tier: 4 });
   BLOCKS.push({ id: "giant_mushroom", name: "Гигантский гриб", solid: true, hardness: 2, drop: "mushroom", yield: 2, tier: 1, tall: true, light: 90 }); // 🍄 светится
+  BLOCKS.push({ id: "ember_ore", name: "Руда эмбера", solid: true, hardness: 6, drop: "ember", yield: 2, tier: 4, light: 80 });   // 🔥 светящаяся руда вулкана
+  BLOCKS.push({ id: "obsidian", name: "Обсидиан", solid: true, hardness: 8, drop: "obsidian", yield: 1, tier: 6 });               // тёмный твёрдый камень (нужна железная кирка)
+  BLOCKS.push({ id: "basalt", name: "Базальт", solid: true, hardness: 5, drop: "stone", yield: 1, tier: 2 });                     // вулканический камень
 
   const OBJ = {}; BLOCKS.forEach((b, i) => { if (b) OBJ[b.id] = i; });
 
@@ -210,6 +213,7 @@
         else if (e > 0.72) gnd = GROUND.stone;             // горы
         else if (lat < 0.16 && e > 0.50) gnd = GROUND.snow;
         else if (lat > 0.84 && m < 0.45) gnd = GROUND.sand;
+        else if (biome > 0.80) gnd = (ihash(tx, ty, s + 71) < 0.22 ? GROUND.lava : GROUND.volcanic); // 🌋 вулкан с лавовыми озёрами
         else if (biome > 0.64) gnd = GROUND.sand;          // 🌵 пустыня
         else if (moist > 0.7 && biome > 0.42) gnd = (ihash(tx, ty, s + 5) < 0.16 ? GROUND.water : GROUND.swamp); // 🐸 болото с лужами
         else if (biome < 0.34 && moist > 0.52) gnd = GROUND.jungle; // 🌴 джунгли
@@ -231,6 +235,12 @@
         } else if (gnd === GROUND.mycelium) {
           const h = ihash(tx, ty, s + 557);
           if (h < 0.04) o[i] = OBJ.giant_mushroom; else if (h < 0.12) o[i] = OBJ.mushroom_red; else if (h < 0.20) o[i] = OBJ.mushroom_brown;
+        } else if (gnd === GROUND.volcanic) {                 // 🌋 вулкан: руда эмбера, обсидиан, базальт
+          const h = ihash(tx, ty, s + 558);
+          if (h < 0.05) o[i] = OBJ.ember_ore;
+          else if (h < 0.09) o[i] = OBJ.obsidian;
+          else if (h < 0.20) o[i] = OBJ.basalt;
+          else if (ihash(tx, ty, s + 313) < 0.015) o[i] = OBJ.cave_entrance;
         } else if (gnd === GROUND.stone) {
           const ore = smooth(tx * 0.28, ty * 0.28, s + 202), h = ihash(tx, ty, s + 777);
           if (ihash(tx, ty, s + 313) < 0.02) o[i] = OBJ.cave_entrance;   // вход в пещеру (в скалах)
@@ -404,6 +414,7 @@
     if (tx < 0 || ty < 0 || tx >= World.W || ty >= World.H) return true;            // за картой — стена
     if (World.cliff && World.cliff[ty * World.W + tx]) return true;                 // обрыв непроходим
     if (World.gTile(tx, ty) === GROUND.water) return !swim;                         // вода: твёрдо всем, кроме плывущего игрока
+    if (World.gTile(tx, ty) === GROUND.lava) return true;                           // 🌋 лава — непроходима всем (обходи озёра)
     const b = BLOCKS[World.oTile(tx, ty)];
     return !!(b && b.solid);
   };
@@ -447,6 +458,8 @@
       case GROUND.swamp: base = (smooth(tx * 0.3, ty * 0.3, 8) < 0.5 ? "#46563a" : "#3c4c32"); break;   // 🐸 болото — мутно-зелёное
       case GROUND.jungle: base = (smooth(tx * 0.3, ty * 0.3, 9) < 0.5 ? "#3a7a36" : "#317030"); break;  // 🌴 джунгли — сочное
       case GROUND.mycelium: base = (smooth(tx * 0.3, ty * 0.3, 10) < 0.5 ? "#5a4a6a" : "#52426a"); break; // 🍄 грибной лес — мицелий
+      case GROUND.volcanic: base = (smooth(tx * 0.3, ty * 0.3, 11) < 0.5 ? "#3a2e34" : "#2c2026"); break; // 🌋 вулкан — пепельно-базальтовый
+      case GROUND.lava: base = "#ff5a1e"; break;                                                          // 🌋 лава
       default: base = PAL.grass1;
     }
     ctx.fillStyle = base; ctx.fillRect(x, y, TILE, TILE);
@@ -488,6 +501,14 @@
       for (let d = 0; d < 3; d++) ctx.fillRect(x + ihash(tx, ty, d * 5 + 21) * TILE + jw, y + ihash(tx, ty, d * 5 + 22) * TILE, 2, 6); // высокая трава колышется
     } else if (g === GROUND.mycelium) {
       ctx.fillStyle = "rgba(190,150,255,0.55)"; for (let d = 0; d < 3; d++) ctx.fillRect(x + ihash(tx, ty, d * 7 + 31) * TILE, y + ihash(tx, ty, d * 7 + 32) * TILE, 2, 2); // светящиеся споры
+    } else if (g === GROUND.lava) {
+      const lw = Math.sin(G.time * 2.2 + tx * 0.7 + ty * 0.5);                       // 🌋 лава — пульсирующее свечение
+      ctx.fillStyle = "#ffd24a"; ctx.globalAlpha = 0.45 + 0.3 * (lw * 0.5 + 0.5);
+      ctx.fillRect(x + 3, y + 7, TILE - 6, 5); ctx.fillRect(x + 6, y + TILE - 12, TILE - 14, 4); ctx.globalAlpha = 1;
+      if (ihash(tx, ty, 9) < 0.5) { const bb = (G.time * 0.7 + ihash(tx, ty, 3)) % 1; ctx.fillStyle = "#fff0a0"; ctx.fillRect(x + ihash(tx, ty, 4) * (TILE - 4), y + (TILE - 4) - bb * (TILE - 6), 3, 3); } // всплывающий пузырь
+    } else if (g === GROUND.volcanic) {
+      ctx.fillStyle = "#160e12"; for (let d = 0; d < 3; d++) ctx.fillRect(x + ihash(tx, ty, d * 7 + 41) * TILE, y + ihash(tx, ty, d * 7 + 42) * TILE, 2, 2); // пепел/трещины
+      if (ihash(tx, ty, 51) < 0.14) { ctx.fillStyle = "rgba(255,120,40,0.6)"; ctx.fillRect(x + ihash(tx, ty, 52) * TILE, y + ihash(tx, ty, 53) * TILE, 3, 3); } // тлеющие угольки
     } else if (g === GROUND.sand) {
       ctx.fillStyle = PAL.sandDk;
       for (let d = 0; d < 3; d++) ctx.fillRect(x + ihash(tx, ty, d * 5 + 21) * TILE, y + ihash(tx, ty, d * 5 + 22) * TILE, 2, 2);
@@ -568,6 +589,17 @@
       case "iron":
         drawBoulder(ctx, cxp, by, PAL.stone, PAL.stoneDk);
         for (let d = 0; d < 4; d++) { ctx.fillStyle = d % 2 ? PAL.ironHi : PAL.ironBit; ctx.fillRect(cxp - 10 + ihash(tx, ty, d + 2) * 20, by - 22 + ihash(tx, ty, d + 6) * 12, 4, 4); }
+        break;
+      case "basalt": drawBoulder(ctx, cxp, by, "#3a3540", "#221f2a"); break;     // 🌋 вулканический камень
+      case "ember_ore":                                                          // 🔥 светящаяся руда эмбера
+        ctx.fillStyle = "rgba(255,120,40,0.30)"; circle(ctx, cxp, by - 11, 16 + Math.sin(G.time * 3 + tx + ty) * 2); // тёплое пульсирующее свечение
+        drawBoulder(ctx, cxp, by, "#3a2218", "#20100a");
+        for (let d = 0; d < 4; d++) { ctx.fillStyle = d % 2 ? "#ffd24a" : "#ff8a2a"; ctx.fillRect(cxp - 10 + ihash(tx, ty, d + 2) * 20, by - 22 + ihash(tx, ty, d + 6) * 12, 4, 4); }
+        break;
+      case "obsidian":                                                           // тёмный глянцевый обсидиан
+        drawBoulder(ctx, cxp, by, "#2a1e30", "#150c1a");
+        for (let d = 0; d < 3; d++) { ctx.fillStyle = d % 2 ? "#7a4fb8" : "#4a2f6a"; ctx.fillRect(cxp - 9 + ihash(tx, ty, d + 3) * 18, by - 20 + ihash(tx, ty, d + 7) * 11, 3, 5); } // фиолетовый отлив
+        ctx.fillStyle = "rgba(255,255,255,0.22)"; ctx.fillRect(cxp - 6, by - 19, 3, 6);  // глянцевый блик
         break;
       case "woodblock": {
         const top = by - 33;

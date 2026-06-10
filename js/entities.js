@@ -25,6 +25,7 @@
     slime:   { name: "Слизень", hp: 5, dmg: 2, speed: 46, r: 16, color: "#5aa84a", colorDk: "#3a7a2e", behavior: "chase", atk: 0.9, drop: "mushroom", dropN: 1, split: true }, // 🐸 болото: делится при смерти
     slime_small: { name: "Слизёнок", hp: 2, dmg: 1, speed: 62, r: 10, color: "#7ac85a", colorDk: "#4a8a32", behavior: "chase", atk: 0.7 },
     wasp:    { name: "Оса", hp: 2, dmg: 2, speed: 122, r: 11, color: "#e0b020", colorDk: "#3a2e10", behavior: "chase", fast: true, atk: 0.6 }, // 🌴 джунгли: быстрый летун
+    magmite: { name: "Магмит", hp: 5, dmg: 3, speed: 66, r: 15, color: "#ff6a2a", colorDk: "#7a2410", behavior: "chase", atk: 0.9, drop: "ember", dropN: 1, fiery: true }, // 🌋 вулкан: огненный элементаль
     ghost:   { name: "Призрак", hp: 3, dmg: 2, speed: 62, r: 15, color: "#cfc2f0", colorDk: "#8a78c0", behavior: "chase", atk: 0.9, drop: "ghost_shard", dropN: 1, ghostly: true },
     ghost_king: { name: "Призрачный Король", hp: 30, dmg: 4, speed: 46, r: 26, color: "#c2a8ff", colorDk: "#6a3f9a", behavior: "chase", atk: 1.0, drop: "ghost_shard", dropN: 6, boss: true, ghostly: true },
     abyss_lord: { name: "Повелитель Бездны", hp: 40, dmg: 5, speed: 44, r: 28, color: "#9a4fc8", colorDk: "#2e1640", behavior: "ranged", atk: 1.0, boss: true, ghostly: true }, // 🕳 финал Главы 2
@@ -189,6 +190,7 @@
       let kind = null;
       if (G.state.depth === 0 && gt === G.World.GROUND.swamp && Math.random() < 0.6) kind = "slime";      // 🐸 болото: слизни день и ночь
       else if (G.state.depth === 0 && gt === G.World.GROUND.jungle && Math.random() < 0.5) kind = "wasp"; // 🌴 джунгли: осы
+      else if (G.state.depth === 0 && gt === G.World.GROUND.volcanic && Math.random() < 0.55) kind = "magmite"; // 🌋 вулкан: магмиты день и ночь
       else if (G.sceneDark(s) >= 0.34) { const roll = Math.random(); kind = G.state.depth === 9 ? "ghost" : roll < 0.4 ? "zombie" : roll < 0.65 ? "spider" : roll < 0.88 ? "skeleton" : "creeper"; } // ночной/подземный набор
       if (!kind) continue;                                  // днём вне биома — не спавним
       s.mobs.push(G.makeMob(x, y, kind));
@@ -277,6 +279,18 @@
       ctx.fillStyle = flash ? "#fff" : K.color; G.rr(ctx, -K.r * 0.9, -K.r * 0.7 * sq, K.r * 1.8, K.r * 1.4 * sq, K.r * 0.5); ctx.fill();
       ctx.globalAlpha = 0.4; ctx.fillStyle = "#fff"; G.rr(ctx, -K.r * 0.5, -K.r * 0.5 * sq, K.r * 0.5, K.r * 0.3, 3); ctx.fill(); ctx.globalAlpha = 1; // блик
       if (!flash) { ctx.fillStyle = "#173a12"; ctx.fillRect(-K.r * 0.35, -K.r * 0.15, 3, 3); ctx.fillRect(K.r * 0.18, -K.r * 0.15, 3, 3); }
+    } else if (mu.kind === "magmite") {
+      const pz = G.time * 5 + mu.x, sq = 1 + Math.sin(pz) * 0.10;
+      if (!flash) { ctx.globalAlpha = 0.28; ctx.fillStyle = "#ff7a2a"; circle(ctx, 0, 0, K.r * 1.5); ctx.globalAlpha = 1; }       // тёплое свечение
+      ctx.fillStyle = flash ? "#fff" : K.colorDk; G.rr(ctx, -K.r * 0.9, -K.r * 0.8 * sq, K.r * 1.8, K.r * 1.5 * sq, K.r * 0.5); ctx.fill(); // тёмная корка
+      if (!flash) {
+        ctx.fillStyle = K.color; G.rr(ctx, -K.r * 0.6, -K.r * 0.5 * sq, K.r * 1.2, K.r * 0.9 * sq, K.r * 0.35); ctx.fill();           // раскалённое нутро
+        ctx.strokeStyle = "#ffd24a"; ctx.lineWidth = 2;                                                                              // светящиеся трещины
+        ctx.beginPath(); ctx.moveTo(-6, -2); ctx.lineTo(-2, 3); ctx.lineTo(3, -1); ctx.moveTo(2, 4); ctx.lineTo(6, 1); ctx.stroke();
+        ctx.fillStyle = "#ff8a3a"; for (let k = -1; k <= 1; k++) { const fh = 6 + Math.abs(Math.sin(pz + k)) * 6; ctx.beginPath(); ctx.moveTo(k * 7 - 3, -K.r * 0.6); ctx.lineTo(k * 7, -K.r * 0.6 - fh); ctx.lineTo(k * 7 + 3, -K.r * 0.6); ctx.closePath(); ctx.fill(); } // язычки пламени
+        ctx.fillStyle = "#ffe07a"; for (let k = -1; k <= 1; k++) { const fh = 3 + Math.abs(Math.sin(pz + k + 1)) * 3; ctx.beginPath(); ctx.moveTo(k * 7 - 1.5, -K.r * 0.6); ctx.lineTo(k * 7, -K.r * 0.6 - fh); ctx.lineTo(k * 7 + 1.5, -K.r * 0.6); ctx.closePath(); ctx.fill(); }
+        ctx.fillStyle = "#3a1004"; ctx.fillRect(-5, -2, 3, 3); ctx.fillRect(3, -2, 3, 3);                                            // глаза
+      }
     } else if (mu.kind === "wasp") {
       ctx.globalAlpha = 0.55; ctx.fillStyle = "#dfe8f4"; const fl = Math.abs(Math.sin(G.time * 26)) * 4;
       ctx.beginPath(); ctx.ellipse(-2, -7 - fl, 6, 3, -0.5, 0, PI * 2); ctx.ellipse(2, -7 - fl, 6, 3, 0.5, 0, PI * 2); ctx.fill(); ctx.globalAlpha = 1; // крылья

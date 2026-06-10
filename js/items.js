@@ -34,6 +34,9 @@
     emerald:       { id: "emerald",       name: "Изумруд",        icon: "💚", stack: 99 },
     pick_emerald:  { id: "pick_emerald",  name: "Изумрудная кирка", icon: "⛏", stack: 1, tool: "pick", power: 12 },
     sword_emerald: { id: "sword_emerald", name: "Изумрудный меч",   icon: "⚔", stack: 1, weapon: 11 },
+    ember:    { id: "ember",    name: "Эмбер",     icon: "🟠", stack: 99 },                                          // 🌋 материал вулкана (из руды эмбера)
+    obsidian: { id: "obsidian", name: "Обсидиан",  icon: "⬛", stack: 99, place: "obsidian" },                       // тёмный камень — материал + строительный блок
+    sword_obsidian: { id: "sword_obsidian", name: "Обсидиановый меч", icon: "⚔", stack: 1, weapon: 10 },             // 🌋 сильный меч из вулкана (альтернатива алмазному пути)
     sword_fire:    { id: "sword_fire",    name: "Огненный меч",     icon: "🔥", stack: 1, weapon: 9, elem: "fire" },
     sword_frost:   { id: "sword_frost",   name: "Ледяной меч",      icon: "❄", stack: 1, weapon: 9, elem: "frost" },
     mushroom:      { id: "mushroom",      name: "Гриб",           icon: "🍄", stack: 99, food: 3 },
@@ -127,6 +130,7 @@
     { out: "sword_diamond", n: 1, once: true, in: [["diamond", 2], ["stick", 1]] },
     { out: "pick_emerald",  n: 1, once: true, cat: "tools", in: [["emerald", 3], ["stick", 2]] },
     { out: "sword_emerald", n: 1, once: true, cat: "tools", in: [["emerald", 2], ["stick", 1]] },
+    { out: "sword_obsidian", n: 1, once: true, cat: "tools", in: [["obsidian", 2], ["ember", 2], ["stick", 1]] },  // 🌋 меч вулкана
     { out: "sword_fire",  n: 1, once: true, cat: "tools", in: [["sword_diamond", 1], ["coal", 4]] },          // 🔥 зачарование огнём
     { out: "sword_frost", n: 1, once: true, cat: "tools", in: [["sword_diamond", 1], ["ghost_shard", 2]] },   // ❄ зачарование льдом
     { out: "mushroom_stew", n: 1, cat: "food", in: [["mushroom", 2]] },
