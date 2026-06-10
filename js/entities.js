@@ -26,6 +26,7 @@
     slime_small: { name: "Слизёнок", hp: 2, dmg: 1, speed: 62, r: 10, color: "#7ac85a", colorDk: "#4a8a32", behavior: "chase", atk: 0.7 },
     wasp:    { name: "Оса", hp: 2, dmg: 2, speed: 122, r: 11, color: "#e0b020", colorDk: "#3a2e10", behavior: "chase", fast: true, atk: 0.6 }, // 🌴 джунгли: быстрый летун
     magmite: { name: "Магмит", hp: 5, dmg: 3, speed: 66, r: 15, color: "#ff6a2a", colorDk: "#7a2410", behavior: "chase", atk: 0.9, drop: "ember", dropN: 1, fiery: true }, // 🌋 вулкан: огненный элементаль
+    magma_guardian: { name: "Магма-страж", hp: 22, dmg: 5, speed: 40, r: 24, color: "#ff5a1e", colorDk: "#5a1808", behavior: "chase", atk: 1.0, drop: "magma_core", dropN: 1, miniboss: true, fiery: true }, // 🌋 мини-босс вулкана
     ghost:   { name: "Призрак", hp: 3, dmg: 2, speed: 62, r: 15, color: "#cfc2f0", colorDk: "#8a78c0", behavior: "chase", atk: 0.9, drop: "ghost_shard", dropN: 1, ghostly: true },
     ghost_king: { name: "Призрачный Король", hp: 30, dmg: 4, speed: 46, r: 26, color: "#c2a8ff", colorDk: "#6a3f9a", behavior: "chase", atk: 1.0, drop: "ghost_shard", dropN: 6, boss: true, ghostly: true },
     abyss_lord: { name: "Повелитель Бездны", hp: 40, dmg: 5, speed: 44, r: 28, color: "#9a4fc8", colorDk: "#2e1640", behavior: "ranged", atk: 1.0, boss: true, ghostly: true }, // 🕳 финал Главы 2
@@ -149,6 +150,7 @@
     if (!mu.K.passive) G.state.qkills = (G.state.qkills || 0) + 1;
     if (s.addXp) s.addXp(mu.K.boss ? 30 : mu.K.miniboss ? 25 : mu.K.passive ? 2 : 6);
     if (mu.kind === "golem") { G.state.maxHp += 4; G.state.hp = G.state.maxHp; G.state.templeCleared = 1; G.shake(18); G.fx.ring(mu.x, mu.y, "#ff7aa8", 120, 0.9); G.fx.burst(mu.x, mu.y - 8, "#ff8ab0", 24, 200, 0.8); }
+    if (mu.kind === "magma_guardian") { G.shake(16); G.fx.ring(mu.x, mu.y, "#ff8a3a", 124, 0.8); G.fx.ring(mu.x, mu.y, "#ffd24a", 70, 0.5); G.fx.burst(mu.x, mu.y - 8, "#ffce4a", 28, 230, 0.85); G.audio.tone(330, 0.45, "sawtooth", 0.06); } // 🌋 трофей magma_core + опыт мини-босса
     if (mu.K.split && s.mobs.length < 24) { for (let q = 0; q < 2; q++) s.mobs.push(G.makeMob(mu.x + (q ? 16 : -16), mu.y + 6, "slime_small")); }
     if (mu.kind === "ghost_king") { G.state.bossDefeated = 1; G.invAdd("crown", 1); G.shake(20); G.fx.ring(mu.x, mu.y, "#ffce4a", 130, 0.9); G.fx.burst(mu.x, mu.y - 8, "#ffd24a", 26, 220, 0.8); G.audio.tone(520, 0.5, "triangle", 0.06); }
     if (mu.kind === "abyss_lord") { G.state.abyssDefeated = 1; G.invAdd("crown", 1); G.shake(24); G.fx.ring(mu.x, mu.y, "#d24bff", 150, 1.0); G.fx.ring(mu.x, mu.y, "#fff", 90, 0.6); G.fx.burst(mu.x, mu.y - 8, "#c46bff", 30, 240, 0.9); G.audio.levelup(); } // 🕳 финал Главы 2
@@ -190,7 +192,7 @@
       let kind = null;
       if (G.state.depth === 0 && gt === G.World.GROUND.swamp && Math.random() < 0.6) kind = "slime";      // 🐸 болото: слизни день и ночь
       else if (G.state.depth === 0 && gt === G.World.GROUND.jungle && Math.random() < 0.5) kind = "wasp"; // 🌴 джунгли: осы
-      else if (G.state.depth === 0 && gt === G.World.GROUND.volcanic && Math.random() < 0.55) kind = "magmite"; // 🌋 вулкан: магмиты день и ночь
+      else if (G.state.depth === 0 && gt === G.World.GROUND.volcanic && Math.random() < 0.55) kind = (Math.random() < 0.1 ? "magma_guardian" : "magmite"); // 🌋 вулкан: магмиты + редкий магма-страж
       else if (G.sceneDark(s) >= 0.34) { const roll = Math.random(); kind = G.state.depth === 9 ? "ghost" : roll < 0.4 ? "zombie" : roll < 0.65 ? "spider" : roll < 0.88 ? "skeleton" : "creeper"; } // ночной/подземный набор
       if (!kind) continue;                                  // днём вне биома — не спавним
       s.mobs.push(G.makeMob(x, y, kind));
@@ -290,6 +292,17 @@
         ctx.fillStyle = "#ff8a3a"; for (let k = -1; k <= 1; k++) { const fh = 6 + Math.abs(Math.sin(pz + k)) * 6; ctx.beginPath(); ctx.moveTo(k * 7 - 3, -K.r * 0.6); ctx.lineTo(k * 7, -K.r * 0.6 - fh); ctx.lineTo(k * 7 + 3, -K.r * 0.6); ctx.closePath(); ctx.fill(); } // язычки пламени
         ctx.fillStyle = "#ffe07a"; for (let k = -1; k <= 1; k++) { const fh = 3 + Math.abs(Math.sin(pz + k + 1)) * 3; ctx.beginPath(); ctx.moveTo(k * 7 - 1.5, -K.r * 0.6); ctx.lineTo(k * 7, -K.r * 0.6 - fh); ctx.lineTo(k * 7 + 1.5, -K.r * 0.6); ctx.closePath(); ctx.fill(); }
         ctx.fillStyle = "#3a1004"; ctx.fillRect(-5, -2, 3, 3); ctx.fillRect(3, -2, 3, 3);                                            // глаза
+      }
+    } else if (mu.kind === "magma_guardian") {
+      const pz = G.time * 4 + mu.x, sq = 1 + Math.sin(pz) * 0.06;
+      if (!flash) { ctx.globalAlpha = 0.30; ctx.fillStyle = "#ff7a2a"; circle(ctx, 0, -2, K.r * 1.6); ctx.globalAlpha = 1; }        // жар
+      ctx.fillStyle = flash ? "#fff" : K.color; G.rr(ctx, -K.r * 0.85, -K.r * 0.9 * sq, K.r * 1.7, K.r * 1.7 * sq, K.r * 0.4); ctx.fill(); // раскалённая глыба
+      if (!flash) {
+        ctx.fillStyle = K.colorDk; G.rr(ctx, -K.r * 0.85, -K.r * 0.2, K.r * 1.7, K.r * 0.5, 4); ctx.fill();                          // плита-броня
+        ctx.fillStyle = "#3a1e10"; ctx.fillRect(-K.r * 0.7, -K.r * 0.8, 7, 9); ctx.fillRect(K.r * 0.4, -K.r * 0.8, 7, 9); ctx.fillRect(-4, -K.r * 0.5, 8, 8); // куски породы
+        ctx.fillStyle = "#ffd24a"; circle(ctx, 0, -K.r * 0.35, 5 + Math.sin(pz * 1.5) * 1.5); ctx.fillStyle = "#fff0a0"; circle(ctx, 0, -K.r * 0.35, 2.5); // ядро
+        ctx.fillStyle = "#ff8a3a"; for (let k = -2; k <= 2; k++) { const fh = 7 + Math.abs(Math.sin(pz + k)) * 7; ctx.beginPath(); ctx.moveTo(k * 8 - 3.5, -K.r * 0.85); ctx.lineTo(k * 8, -K.r * 0.85 - fh); ctx.lineTo(k * 8 + 3.5, -K.r * 0.85); ctx.closePath(); ctx.fill(); } // корона пламени
+        ctx.fillStyle = "#fff0a0"; ctx.fillRect(-7, -K.r * 0.45, 4, 4); ctx.fillRect(4, -K.r * 0.45, 4, 4);                          // глаза
       }
     } else if (mu.kind === "wasp") {
       ctx.globalAlpha = 0.55; ctx.fillStyle = "#dfe8f4"; const fl = Math.abs(Math.sin(G.time * 26)) * 4;
