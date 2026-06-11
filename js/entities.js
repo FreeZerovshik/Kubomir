@@ -148,9 +148,10 @@
     if (mu.K.drop) { const dn = mu.K.dropN || 1; G.invAdd(mu.K.drop, dn); const di = G.ITEMS[mu.K.drop]; if (s.addFloater) s.addFloater(mu.x, mu.y - 14, "+" + (di ? di.icon : "?") + (dn > 1 ? "×" + dn : ""), "#bdf0a8"); }
     if (!mu.K.passive && G.state.quests) G.state.quests.fight = 1;
     if (!mu.K.passive) G.state.qkills = (G.state.qkills || 0) + 1;
+    if (!mu.K.passive) { const cn = mu.K.boss ? 25 : mu.K.miniboss ? 10 : (1 + ((Math.random() * 2) | 0)); G.state.coins = (G.state.coins || 0) + cn; if (s.addFloater) s.addFloater(mu.x + 6, mu.y - 18, "🪙+" + cn, "#ffd24a"); } // 🪙 монеты с врага
     if (s.addXp) s.addXp(mu.K.boss ? 30 : mu.K.miniboss ? 25 : mu.K.passive ? 2 : 6);
     if (mu.kind === "golem") { G.state.maxHp += 4; G.state.hp = G.state.maxHp; G.state.templeCleared = 1; G.shake(18); G.fx.ring(mu.x, mu.y, "#ff7aa8", 120, 0.9); G.fx.burst(mu.x, mu.y - 8, "#ff8ab0", 24, 200, 0.8); }
-    if (mu.kind === "magma_guardian") { G.shake(16); G.fx.ring(mu.x, mu.y, "#ff8a3a", 124, 0.8); G.fx.ring(mu.x, mu.y, "#ffd24a", 70, 0.5); G.fx.burst(mu.x, mu.y - 8, "#ffce4a", 28, 230, 0.85); G.audio.tone(330, 0.45, "sawtooth", 0.06); } // 🌋 трофей magma_core + опыт мини-босса
+    if (mu.kind === "magma_guardian") { G.state.magmaSlain = 1; G.shake(16); G.fx.ring(mu.x, mu.y, "#ff8a3a", 124, 0.8); G.fx.ring(mu.x, mu.y, "#ffd24a", 70, 0.5); G.fx.burst(mu.x, mu.y - 8, "#ffce4a", 28, 230, 0.85); G.audio.tone(330, 0.45, "sawtooth", 0.06); } // 🌋 трофей magma_core + опыт мини-босса
     if (mu.K.split && s.mobs.length < 24) { for (let q = 0; q < 2; q++) s.mobs.push(G.makeMob(mu.x + (q ? 16 : -16), mu.y + 6, "slime_small")); }
     if (mu.kind === "ghost_king") { G.state.bossDefeated = 1; G.invAdd("crown", 1); G.shake(20); G.fx.ring(mu.x, mu.y, "#ffce4a", 130, 0.9); G.fx.burst(mu.x, mu.y - 8, "#ffd24a", 26, 220, 0.8); G.audio.tone(520, 0.5, "triangle", 0.06); }
     if (mu.kind === "abyss_lord") { G.state.abyssDefeated = 1; G.invAdd("crown", 1); G.shake(24); G.fx.ring(mu.x, mu.y, "#d24bff", 150, 1.0); G.fx.ring(mu.x, mu.y, "#fff", 90, 0.6); G.fx.burst(mu.x, mu.y - 8, "#c46bff", 30, 240, 0.9); G.audio.levelup(); } // 🕳 финал Главы 2

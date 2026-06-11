@@ -48,6 +48,20 @@
     { k: "tough",   ic: "🛡", name: "Крепкий",   desc: "−15% получаемого урона" },
     { k: "lucky",   ic: "🍀", name: "Удачливый", desc: "+50% опыта" },
   ];
+  const ACHIEVEMENTS = [     // 🏆 ачивки: тост + монеты при выполнении (проверяются раз)
+    { id: "wood",    ic: "🪵", name: "Дровосек",          coins: 5,  check: () => G.state.quests.chop },
+    { id: "pick",    ic: "⛏",  name: "Первая кирка",       coins: 5,  check: () => G.toolPower() > 1 },
+    { id: "cave",    ic: "🪜", name: "В глубины",          coins: 8,  check: () => G.state.quests.cave },
+    { id: "home",    ic: "🛏", name: "Свой дом",           coins: 10, check: () => G.state.homeX != null },
+    { id: "diamond", ic: "💎", name: "Первый алмаз",       coins: 20, check: () => G.invCount("diamond") > 0 },
+    { id: "spell",   ic: "✨", name: "Магия!",             coins: 12, check: () => G.state.quests.spell },
+    { id: "obsidian",ic: "⬛", name: "Покоритель вулкана",  coins: 22, check: () => G.invCount("obsidian") > 0 },
+    { id: "temple",  ic: "⚔",  name: "Храм очищен",         coins: 25, check: () => G.state.templeCleared },
+    { id: "magma",   ic: "🌋", name: "Магма-страж повержен", coins: 35, check: () => G.state.magmaSlain },
+    { id: "king",    ic: "👑", name: "Король повержен",      coins: 40, check: () => G.state.bossDefeated },
+    { id: "abyss",   ic: "👁", name: "Бездна запечатана",   coins: 60, check: () => G.state.abyssDefeated },
+    { id: "rich",    ic: "🪙", name: "Богач — 100 монет",   coins: 0,  check: () => (G.state.coins || 0) >= 100 },
+  ];
   const NPC_QUESTS = [       // 🗨 задания жителей (Fallout: принеси/победи → награда)
     { id: "wood", text: "Принеси 8 дерева 🪵", item: "wood", n: 8, xp: 18, give: ["ingot", 2] },
     { id: "meat", text: "Принеси 4 мяса 🍖", item: "meat", n: 4, xp: 18, give: ["gold", 1] },
@@ -63,6 +77,16 @@
     { give: ["gold", 3], get: ["diamond", 1] },
     { give: ["coal", 6], get: ["torch", 8] },
     { give: ["wool", 4], get: ["bed", 1] },
+  ];
+  const SHOP = [             // 🪙 магазин жителя: купить за монеты (идея Льва)
+    { item: "cooked_meat", n: 3, price: 6 },
+    { item: "torch", n: 8, price: 5 },
+    { item: "bread", n: 2, price: 8 },
+    { item: "ingot", n: 2, price: 14 },
+    { item: "potion_heal", n: 1, price: 18 },
+    { item: "ember", n: 2, price: 22 },
+    { item: "diamond", n: 1, price: 40 },
+    { item: "tome_heal", n: 1, price: 32 },
   ];
   const STORY = [   // icon — крупный символ цели для не-читающего игрока (6 лет)
     { icon: "🌳", t: "Глава 1. Остров в беде — из глубин лезут тени. Сруби дерево 🌳", done: () => G.state.quests.chop },
@@ -188,9 +212,10 @@
       if (G.state.depth === 4 && G.state.bossDefeated) { G.state.quests.abyss = 1; if (!G.state.abyssDefeated) this.mobs.push(G.makeMob(this.px + TILE * 2, this.py, "abyss_lord")); } // 🕳 Глава 2: Повелитель Бездны в глубочайшей пещере
       this._invOpen = false; this._craftTab = 0; this._won = false;
       this._lastTransTile = Math.floor(this.px / TILE) + "," + Math.floor(this.py / TILE); // спавн/загрузочный тайл не должен сам сработать как лестница (фикс дрейфа глубины при автосейве на переходе)
-      this._chestOpen = false; this._chestKey = null; this._fishT = 0; this._tradeOpen = false; this._tradeMob = null;
+      this._chestOpen = false; this._chestKey = null; this._fishT = 0; this._tradeOpen = false; this._tradeMob = null; this._shopTab = 0;
       this.weather = "clear"; this._wxT = 30 + Math.random() * 40; this._flash = 0; this._wxAnim = 0; this._onBoat = false;
       this._goalsDone = null; this._goalFlash = 0; this._floaters = []; this.spellShots = []; this._perkOpen = false; this._perksPending = 0;
+      this._achQueue = []; this._achCur = null; this._achT = 0;   // 🏆 очередь тостов ачивок
       this._dashT = 0; this._dashCd = 0; this._dashDX = 1; this._dashDY = 0; this._dashTrail = []; this._combo = 0; this._comboT = 0;
       this.darkBase = G.state.depth > 0 ? Math.min(0.92, 0.5 + G.state.depth * 0.12) : null;
       while (G.state.inv.length < G.INV_SIZE) G.state.inv.push(null); // докинуть слоты старым сейвам
@@ -709,6 +734,11 @@
         else if (nd > this._goalsDone) { this._goalFlash = 1.2; G.audio.tone(660, 0.12, "triangle", 0.05); G.audio.tone(880, 0.13, "triangle", 0.04); G.shake(3); this.addXp(15); this._goalsDone = nd; } // 🆙 опыт за цель
         else this._goalsDone = nd; }
       this._goalFlash = Math.max(0, (this._goalFlash || 0) - dt);
+      // 🏆 ачивки: проверка раз → тост + монеты
+      if (!G.state.achieved) G.state.achieved = {};
+      for (const a of ACHIEVEMENTS) { if (!G.state.achieved[a.id] && a.check()) { G.state.achieved[a.id] = 1; if (a.coins) G.state.coins = (G.state.coins || 0) + a.coins; if (this._achQueue) this._achQueue.push(a); } }
+      if (!this._achCur && this._achQueue && this._achQueue.length) { this._achCur = this._achQueue.shift(); this._achT = 2.8; G.audio.levelup(); G.shake(4); }
+      if (this._achCur) { this._achT -= dt; if (this._achT <= 0) this._achCur = null; }
       for (let i = this._floaters.length - 1; i >= 0; i--) { const fl = this._floaters[i]; fl.y -= 26 * dt; fl.life -= dt; if (fl.life <= 0) this._floaters.splice(i, 1); } // всплывающий лут
       const _bowSel = (function () { const z = G.invSel(); return z && z.item === "bow" && G.invCount("arrow") > 0; })();
       const _rodSel = (function () { const z = G.invSel(); return z && z.item === "fishing_rod"; })();
@@ -839,6 +869,7 @@
       this.drawMinimap(ctx);
       this.drawDashButton(ctx);
       if (this._combo >= 2) { ctx.save(); ctx.globalAlpha = clamp(this._comboT, 0, 1); ctx.font = G.f(26, "900"); ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#ffce4a"; ctx.strokeStyle = "rgba(0,0,0,0.55)"; ctx.lineWidth = 4; const ct = "КОМБО ×" + this._combo; ctx.strokeText(ct, VIEW.w / 2, 162); ctx.fillText(ct, VIEW.w / 2, 162); ctx.restore(); }
+      this.drawAchToast(ctx);
       if (this._craftOpen) { this.drawCraft(ctx); return; }
       if (this._perkOpen) { this.drawPerks(ctx); return; }
       if (this._tradeOpen) { this.drawTrade(ctx); return; }
@@ -858,13 +889,16 @@
     },
 
     // --- торговля с жителем ---
-    tradePanel() { const w = 720, h = 186 + TRADES.length * 56; return { x: (VIEW.w - w) / 2, y: (VIEW.h - h) / 2, w: w, h: h }; },
+    tradePanel() { const w = 720, h = 224 + Math.max(TRADES.length, SHOP.length) * 56; return { x: (VIEW.w - w) / 2, y: (VIEW.h - h) / 2, w: w, h: h }; },
     tradeCloseRect() { const p = this.tradePanel(); return { x: p.x + p.w - 52, y: p.y + 12, w: 40, h: 40 }; },
-    tradeCardRect(i) { const p = this.tradePanel(); return { x: p.x + 24, y: p.y + 152 + i * 56, w: p.w - 48, h: 48 }; },
+    tradeCardRect(i) { const p = this.tradePanel(); return { x: p.x + 24, y: p.y + 190 + i * 56, w: p.w - 48, h: 48 }; },
+    shopTabRect(t) { const p = this.tradePanel(); return { x: p.x + 24 + t * 152, y: p.y + 144, w: 144, h: 34 }; },
     questBtnRect() { const p = this.tradePanel(); return { x: p.x + p.w - 192, y: p.y + 76, w: 168, h: 48 }; },
     questDone(q) { return q.kill ? (G.state.qkills - G.state.questBase) >= q.kill : G.invCount(q.item) >= q.n; },
     tradeTap(x, y) {
       if (rectHit(this.tradeCloseRect(), x, y)) { this._tradeOpen = false; G.audio.blip(); return; }
+      if (rectHit(this.shopTabRect(0), x, y)) { this._shopTab = 0; G.audio.blip(); return; }
+      if (rectHit(this.shopTabRect(1), x, y)) { this._shopTab = 1; G.audio.blip(); return; }
       if (rectHit(this.questBtnRect(), x, y)) {       // 🗨 кнопка задания (взять / сдать)
         if (!G.state.questId) { G.state.questId = this._offerQuest; G.state.questBase = G.state.qkills; G.audio.pickup(); G.shake(2); }
         else { const q = npcQuest(G.state.questId);
@@ -873,10 +907,15 @@
         }
         return;
       }
-      for (let i = 0; i < TRADES.length; i++) if (rectHit(this.tradeCardRect(i), x, y)) {
-        const t = TRADES[i];
-        if (G.invCount(t.give[0]) >= t.give[1] && G.invRoom(t.get[0])) { G.invRemove(t.give[0], t.give[1]); G.invAdd(t.get[0], t.get[1]); G.audio.pickup(); G.shake(2); G.state.quests.trade = 1; }
-        else G.audio.blip();
+      const LIST = this._shopTab ? SHOP : TRADES;
+      for (let i = 0; i < LIST.length; i++) if (rectHit(this.tradeCardRect(i), x, y)) {
+        if (this._shopTab) { const sh = SHOP[i];          // 🪙 покупка за монеты
+          if ((G.state.coins || 0) >= sh.price && G.invRoom(sh.item)) { G.state.coins -= sh.price; G.invAdd(sh.item, sh.n); G.audio.pickup(); G.shake(2); }
+          else G.audio.blip();
+        } else { const t = TRADES[i];                     // обмен предметами
+          if (G.invCount(t.give[0]) >= t.give[1] && G.invRoom(t.get[0])) { G.invRemove(t.give[0], t.give[1]); G.invAdd(t.get[0], t.get[1]); G.audio.pickup(); G.shake(2); G.state.quests.trade = 1; }
+          else G.audio.blip();
+        }
         return;
       }
       if (!rectHit(this.tradePanel(), x, y)) this._tradeOpen = false;
@@ -901,15 +940,35 @@
       ctx.fillStyle = bc; rr(ctx, qb.x, qb.y, qb.w, qb.h, 10); ctx.fill();
       ctx.fillStyle = (!active || done) ? "#0c1a0c" : "#fff"; ctx.font = G.f(18, "900"); ctx.textAlign = "center"; ctx.fillText(bl, qb.x + qb.w / 2, qb.y + qb.h / 2 + 1);
       ctx.strokeStyle = "rgba(255,255,255,0.12)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(p.x + 20, p.y + 138); ctx.lineTo(p.x + p.w - 20, p.y + 138); ctx.stroke();
-      for (let i = 0; i < TRADES.length; i++) {
-        const t = TRADES[i], r = this.tradeCardRect(i), gi = G.ITEMS[t.give[0]], go = G.ITEMS[t.get[0]];
-        const can = G.invCount(t.give[0]) >= t.give[1] && G.invRoom(t.get[0]);
-        ctx.fillStyle = can ? "rgba(90,168,74,0.22)" : "rgba(255,255,255,0.05)"; rr(ctx, r.x, r.y, r.w, r.h, 10); ctx.fill();
-        ctx.lineWidth = 2; ctx.strokeStyle = can ? "#5aa84a" : "rgba(255,255,255,0.14)"; rr(ctx, r.x, r.y, r.w, r.h, 10); ctx.stroke();
-        ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.font = G.f(26); ctx.fillStyle = "#fff";
-        ctx.fillText((gi ? gi.icon : "?") + " ×" + t.give[1] + "    →    " + (go ? go.icon : "?") + " ×" + t.get[1], r.x + 18, r.y + r.h / 2);
-        ctx.textAlign = "right"; ctx.font = G.f(15, "bold"); ctx.fillStyle = can ? "#bdf0a8" : "rgba(255,255,255,0.4)";
-        ctx.fillText(can ? "✓ обмен" : "нужно: " + (gi ? gi.name : "") + " ×" + t.give[1], r.x + r.w - 16, r.y + r.h / 2);
+      // 🪙 табы Обмен / Магазин + баланс монет
+      const tab = this._shopTab ? 1 : 0, tabs = ["🤝 Обмен", "🪙 Магазин"];
+      for (let ti = 0; ti < 2; ti++) { const tr = this.shopTabRect(ti), on = tab === ti;
+        ctx.fillStyle = on ? "#ffce4a" : "rgba(255,255,255,0.10)"; rr(ctx, tr.x, tr.y, tr.w, tr.h, 9); ctx.fill();
+        ctx.fillStyle = on ? "#26200c" : "#fff"; ctx.font = G.f(16, "900"); ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(tabs[ti], tr.x + tr.w / 2, tr.y + tr.h / 2 + 1);
+      }
+      ctx.textAlign = "right"; ctx.font = G.f(18, "900"); ctx.fillStyle = "#ffd24a"; ctx.textBaseline = "middle"; ctx.fillText("🪙 " + (G.state.coins || 0), p.x + p.w - 26, p.y + 161);
+      if (tab === 0) {
+        for (let i = 0; i < TRADES.length; i++) {
+          const t = TRADES[i], r = this.tradeCardRect(i), gi = G.ITEMS[t.give[0]], go = G.ITEMS[t.get[0]];
+          const can = G.invCount(t.give[0]) >= t.give[1] && G.invRoom(t.get[0]);
+          ctx.fillStyle = can ? "rgba(90,168,74,0.22)" : "rgba(255,255,255,0.05)"; rr(ctx, r.x, r.y, r.w, r.h, 10); ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = can ? "#5aa84a" : "rgba(255,255,255,0.14)"; rr(ctx, r.x, r.y, r.w, r.h, 10); ctx.stroke();
+          ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.font = G.f(26); ctx.fillStyle = "#fff";
+          ctx.fillText((gi ? gi.icon : "?") + " ×" + t.give[1] + "    →    " + (go ? go.icon : "?") + " ×" + t.get[1], r.x + 18, r.y + r.h / 2);
+          ctx.textAlign = "right"; ctx.font = G.f(15, "bold"); ctx.fillStyle = can ? "#bdf0a8" : "rgba(255,255,255,0.4)";
+          ctx.fillText(can ? "✓ обмен" : "нужно: " + (gi ? gi.name : "") + " ×" + t.give[1], r.x + r.w - 16, r.y + r.h / 2);
+        }
+      } else {
+        for (let i = 0; i < SHOP.length; i++) {
+          const sh = SHOP[i], r = this.tradeCardRect(i), it = G.ITEMS[sh.item];
+          const can = (G.state.coins || 0) >= sh.price && G.invRoom(sh.item);
+          ctx.fillStyle = can ? "rgba(255,206,74,0.18)" : "rgba(255,255,255,0.05)"; rr(ctx, r.x, r.y, r.w, r.h, 10); ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = can ? "#ffce4a" : "rgba(255,255,255,0.14)"; rr(ctx, r.x, r.y, r.w, r.h, 10); ctx.stroke();
+          ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.font = G.f(25); ctx.fillStyle = "#fff";
+          ctx.fillText((it ? it.icon : "?") + " ×" + sh.n + "   " + (it ? it.name : sh.item), r.x + 18, r.y + r.h / 2);
+          ctx.textAlign = "right"; ctx.font = G.f(16, "900"); ctx.fillStyle = can ? "#ffd24a" : "rgba(255,255,255,0.4)";
+          ctx.fillText("🪙 " + sh.price, r.x + r.w - 16, r.y + r.h / 2);
+        }
       }
     },
     drawTempOverlay(ctx) {
@@ -1057,6 +1116,10 @@
         ctx.fillStyle = "rgba(0,0,0,0.35)"; rr(ctx, bx + 36, 59, bw - 48, 12, 6); ctx.fill();
         ctx.fillStyle = "#e0902a"; rr(ctx, bx + 36, 59, (bw - 48) * clamp(st.hunger / st.maxHunger, 0, 1), 12, 6); ctx.fill();
       }
+      { const cx2 = bx + bw + 14;                                                    // 🪙 монеты
+        ctx.fillStyle = PAL.panel; rr(ctx, cx2, 20, 104, 26, 9); ctx.fill();
+        ctx.textAlign = "left"; ctx.font = G.f(18); ctx.fillStyle = "#ffd24a"; ctx.fillText("🪙", cx2 + 9, 34);
+        ctx.font = G.f(16, "bold"); ctx.fillStyle = "#fff"; ctx.fillText("" + (st.coins || 0), cx2 + 36, 34); }
       if (this.inWater) {
         ctx.fillStyle = PAL.panel; rr(ctx, bx, 84, bw, 26, 9); ctx.fill();
         ctx.font = G.f(18); ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.fillText("🫧", bx + 9, 98);
@@ -1176,6 +1239,21 @@
         circle(ctx, x, y, 1.6 + (i % 3) * 0.7);
       }
       ctx.globalAlpha = 1;
+    },
+    drawAchToast(ctx) {       // 🏆 тост достижения (выезжает сверху, фанфара в update)
+      if (!this._achCur) return;
+      const a = this._achCur, t = this._achT, life = 2.8;
+      const inP = Math.min(1, (life - t) / 0.25), alpha = t < 0.45 ? t / 0.45 : 1;
+      ctx.save(); ctx.globalAlpha = alpha;
+      const w = 372, h = 64, x0 = VIEW.w / 2 - w / 2, y = 150 - (1 - inP) * 34;
+      ctx.fillStyle = "rgba(22,17,9,0.92)"; rr(ctx, x0, y, w, h, 13); ctx.fill();
+      ctx.strokeStyle = "#ffce4a"; ctx.lineWidth = 2; rr(ctx, x0, y, w, h, 13); ctx.stroke();
+      ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.font = G.f(34); ctx.fillText(a.ic, x0 + 16, y + h / 2 + 1);
+      ctx.font = G.f(12, "900"); ctx.fillStyle = "#ffce4a"; ctx.fillText("🏆 ДОСТИЖЕНИЕ", x0 + 62, y + 19);
+      ctx.font = G.f(18, "bold"); ctx.fillStyle = "#fff"; ctx.fillText(a.name, x0 + 62, y + 42);
+      if (a.coins) { ctx.textAlign = "right"; ctx.font = G.f(17, "900"); ctx.fillStyle = "#ffd24a"; ctx.fillText("🪙+" + a.coins, x0 + w - 16, y + h / 2 + 1); }
+      ctx.restore(); ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
     },
 
     drawHotbar(ctx) {
