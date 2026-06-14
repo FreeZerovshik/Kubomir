@@ -896,6 +896,27 @@
     ctx.strokeStyle = "rgba(0,0,0,0.28)"; ctx.lineWidth = 2; G.rr(ctx, cx - r, cy - r, r * 2, r * 2, r * 0.42); ctx.stroke();
     return true;
   };
+  // 🧱 мини-спрайт реального блока вместо эмодзи — чтобы блоки стройки (булыжник/мрамор/обсидиан…) различались по ЦВЕТУ и узору, а не были все 🧱
+  G.blockSwatch = function (ctx, item, cx, cy, r) {
+    if (!item || !item.place) return false;
+    const b = World.BLOCKS[World.OBJ[item.place]];
+    if (!b || !b.col) return false;                                   // только блоки с заданным цветом (BUILD_SPEC); спец-блоки (печь/факел) — эмодзи
+    ctx.save();
+    ctx.fillStyle = b.colDk || b.col; G.rr(ctx, cx - r, cy - r, r * 2, r * 2, r * 0.26); ctx.fill();
+    ctx.fillStyle = b.col; G.rr(ctx, cx - r + 2, cy - r + 2, r * 2 - 4, r * 2 - 4, r * 0.2); ctx.fill();
+    ctx.strokeStyle = b.colDk || "rgba(0,0,0,0.3)"; ctx.lineWidth = Math.max(1, r * 0.08);
+    if (b.pat === "brick") {
+      ctx.beginPath(); ctx.moveTo(cx - r + 2, cy); ctx.lineTo(cx + r - 2, cy);
+      ctx.moveTo(cx, cy - r + 3); ctx.lineTo(cx, cy - 2); ctx.moveTo(cx - r * 0.5, cy + 2); ctx.lineTo(cx - r * 0.5, cy + r - 3); ctx.moveTo(cx + r * 0.5, cy + 2); ctx.lineTo(cx + r * 0.5, cy + r - 3); ctx.stroke();
+    } else if (b.pat === "plank" || b.pat === "tile") {
+      ctx.beginPath(); ctx.moveTo(cx - r + 2, cy - r * 0.4); ctx.lineTo(cx + r - 2, cy - r * 0.4); ctx.moveTo(cx - r + 2, cy + r * 0.4); ctx.lineTo(cx + r - 2, cy + r * 0.4); ctx.stroke();
+    } else if (b.pat === "window" || b.vitrazh || b.glass) {
+      ctx.fillStyle = "rgba(255,255,255,0.32)"; G.rr(ctx, cx - r * 0.5, cy - r * 0.5, r, r, 2); ctx.fill();
+    }
+    ctx.fillStyle = "rgba(255,255,255,0.18)"; G.rr(ctx, cx - r + 2, cy - r + 2, r * 2 - 4, r * 0.5, r * 0.2); ctx.fill(); // блик сверху
+    ctx.restore();
+    return true;
+  };
   G.drawSteve = function (ctx, x, y, face, walk, swing, held) {
     const f = face < 0 ? -1 : 1;
     const sw = Math.sin(walk * PI * 2) * 5;      // мах ног при ходьбе
