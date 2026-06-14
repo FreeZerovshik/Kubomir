@@ -103,8 +103,8 @@
   function circle(ctx, x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, PI * 2); ctx.fill(); }
 
   /* ========================= МЕНЮ ========================= */
-  const freeRect = { x: VIEW.w / 2 - 152, y: 352, w: 148, h: 64 };
-  const storyRect = { x: VIEW.w / 2 + 4, y: 352, w: 148, h: 64 };
+  const freeRect = { x: VIEW.w / 2 - 184, y: 352, w: 176, h: 64 };
+  const storyRect = { x: VIEW.w / 2 + 8, y: 352, w: 176, h: 64 };
   const contRect = { x: VIEW.w / 2 - 150, y: 426, w: 300, h: 52 };
   const soundRect = { x: VIEW.w / 2 - 150, y: 488, w: 300, h: 46 };
   const diffRect = { x: VIEW.w / 2 - 150, y: 544, w: 300, h: 46 };
@@ -135,7 +135,9 @@
     ctx.fillStyle = color; rr(ctx, r.x, r.y, r.w, r.h, 14); ctx.fill();
     ctx.fillStyle = "rgba(255,255,255,0.22)"; rr(ctx, r.x, r.y, r.w, r.h * 0.45, 14); ctx.fill();
     ctx.fillStyle = PAL.ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.font = G.f(sub ? 26 : 30, "bold");
+    let fs = sub ? 26 : 30; ctx.font = G.f(fs, "bold");
+    const maxW = r.w - 22;
+    while (ctx.measureText(label).width > maxW && fs > 12) { fs -= 1; ctx.font = G.f(fs, "bold"); } // ужать текст под ширину кнопки
     ctx.fillText(label, r.x + r.w / 2, r.y + r.h / 2);
   }
 
@@ -210,7 +212,7 @@
       if (G.state.depth === 0) for (let i = 0; i < World.obj.length; i++) { const b = World.BLOCKS[World.obj[i]]; if (b && b.crop != null) this.crops.push({ tx: i % World.W, ty: (i / World.W) | 0, t: b.crop * 8, st: b.crop }); }
       if (G.state.depth === 0 && World.layers[0] && World.layers[0].village) { const v = World.layers[0].village; for (let i = 0; i < 3; i++) this.mobs.push(G.makeMob(v.x * TILE + TILE / 2 + (i - 1) * TILE * 2, (v.y + 3) * TILE + TILE / 2, "villager")); } // 🏘 жители
       if (G.state.depth === 4 && G.state.bossDefeated) { G.state.quests.abyss = 1; if (!G.state.abyssDefeated) this.mobs.push(G.makeMob(this.px + TILE * 2, this.py, "abyss_lord")); } // 🕳 Глава 2: Повелитель Бездны в глубочайшей пещере
-      this._invOpen = false; this._craftTab = 0; this._won = false;
+      this._invOpen = false; this._craftTab = 0; this._craftPage = 0; this._won = false;
       this._lastTransTile = Math.floor(this.px / TILE) + "," + Math.floor(this.py / TILE); // спавн/загрузочный тайл не должен сам сработать как лестница (фикс дрейфа глубины при автосейве на переходе)
       this._chestOpen = false; this._chestKey = null; this._fishT = 0; this._tradeOpen = false; this._tradeMob = null; this._shopTab = 0;
       this.weather = "clear"; this._wxT = 30 + Math.random() * 40; this._flash = 0; this._wxAnim = 0; this._onBoat = false;
@@ -302,8 +304,9 @@
     // --- крафт: оверлей со списком рецептов (тап по карточке = сделать) ---
     craftList() { const k = CATS[this._craftTab || 0].k; return G.RECIPES.filter((r) => (r.cat || "base") === k); },
     craftPanel() {
-      const cols = 5, n = this.craftList().length, rows = Math.max(1, Math.ceil(n / cols)), ch = rows <= 3 ? 168 : 132;
-      const w = 900, h = 100 + rows * ch + (rows - 1) * 14 + 20;
+      const cols = 5, ch = 156, n = this.craftList().length, paged = n > cols * 3;   // макс 3 ряда → всегда влезает в экран; больше — страницами
+      const rows = paged ? 3 : Math.max(1, Math.ceil(n / cols));
+      const w = 900, h = 100 + rows * ch + (rows - 1) * 14 + 20 + (paged ? 46 : 0);
       return { x: (VIEW.w - w) / 2, y: (VIEW.h - h) / 2, w: w, h: h };
     },
     craftCloseRect() { const p = this.craftPanel(); return { x: p.x + p.w - 52, y: p.y + 12, w: 40, h: 40 }; },
@@ -312,12 +315,16 @@
       const x0 = p.x + (p.w - total) / 2;
       return { x: x0 + i * (tw + gap), y: p.y + 50, w: tw, h: 36 };
     },
-    craftCardRect(i) {
-      const p = this.craftPanel(), cw = 160, gap = 14, cols = 5, n = this.craftList().length, rows = Math.max(1, Math.ceil(n / cols)), ch = rows <= 3 ? 168 : 132;
+    craftCardRect(i) {        // i — индекс В ПРЕДЕЛАХ СТРАНИЦЫ (0..14)
+      const p = this.craftPanel(), cw = 160, gap = 14, cols = 5, ch = 156;
       const x0 = p.x + (p.w - (cols * cw + (cols - 1) * gap)) / 2, y0 = p.y + 98;
       const col = i % cols, row = (i / cols) | 0;
       return { x: x0 + col * (cw + gap), y: y0 + row * (ch + 14), w: cw, h: ch };
     },
+    craftPages() { return Math.max(1, Math.ceil(this.craftList().length / 15)); },
+    craftPageList() { const pg = this._craftPage || 0; return this.craftList().slice(pg * 15, pg * 15 + 15); },
+    craftPrevRect() { const p = this.craftPanel(); return { x: p.x + p.w / 2 - 156, y: p.y + p.h - 42, w: 64, h: 32 }; },
+    craftNextRect() { const p = this.craftPanel(); return { x: p.x + p.w / 2 + 92, y: p.y + p.h - 42, w: 64, h: 32 }; },
     nearFurnace() {
       const ptx = Math.floor(this.px / TILE), pty = Math.floor(this.py / TILE), F = World.OBJ.furnace;
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (World.oTile(ptx + dx, pty + dy) === F) return true;
@@ -325,8 +332,12 @@
     },
     craftTap(x, y) {
       if (rectHit(this.craftCloseRect(), x, y)) { this._craftOpen = false; G.audio.blip(); return; }
-      for (let i = 0; i < CATS.length; i++) if (rectHit(this.craftTabRect(i), x, y)) { this._craftTab = i; G.audio.blip(); return; }
-      const list = this.craftList();
+      for (let i = 0; i < CATS.length; i++) if (rectHit(this.craftTabRect(i), x, y)) { this._craftTab = i; this._craftPage = 0; G.audio.blip(); return; }
+      if (this.craftPages() > 1) {
+        if (rectHit(this.craftPrevRect(), x, y)) { this._craftPage = Math.max(0, (this._craftPage || 0) - 1); G.audio.blip(); return; }
+        if (rectHit(this.craftNextRect(), x, y)) { this._craftPage = Math.min(this.craftPages() - 1, (this._craftPage || 0) + 1); G.audio.blip(); return; }
+      }
+      const list = this.craftPageList();
       for (let i = 0; i < list.length; i++) if (rectHit(this.craftCardRect(i), x, y)) {
         const r = list[i], stationOk = !r.station || this.nearFurnace();
         if (stationOk && G.canCraft(r)) { G.craft(r); G.audio.pickup(); G.shake(2); } else G.audio.blip();
@@ -1294,8 +1305,16 @@
         ctx.fillStyle = "#fff"; ctx.font = G.f(15, "bold"); ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(CATS[i].ic + " " + CATS[i].name, t.x + t.w / 2, t.y + t.h / 2 + 1);
       }
-      const list = this.craftList();
+      const list = this.craftPageList();
       for (let i = 0; i < list.length; i++) this.drawCraftCard(ctx, list[i], this.craftCardRect(i));
+      if (this.craftPages() > 1) {                                    // ◀ страница X/Y ▶
+        const pg = this._craftPage || 0, pr = this.craftPrevRect(), nr = this.craftNextRect(), last = this.craftPages() - 1;
+        ctx.fillStyle = pg > 0 ? PAL.btn : "rgba(255,255,255,0.10)"; rr(ctx, pr.x, pr.y, pr.w, pr.h, 9); ctx.fill();
+        ctx.fillStyle = pg < last ? PAL.btn : "rgba(255,255,255,0.10)"; rr(ctx, nr.x, nr.y, nr.w, nr.h, 9); ctx.fill();
+        ctx.fillStyle = "#26200c"; ctx.font = G.f(20, "900"); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("◀", pr.x + pr.w / 2, pr.y + pr.h / 2 + 1); ctx.fillText("▶", nr.x + nr.w / 2, nr.y + nr.h / 2 + 1);
+        ctx.fillStyle = "#fff"; ctx.font = G.f(18, "900"); ctx.fillText((pg + 1) + " / " + this.craftPages(), p.x + p.w / 2, pr.y + pr.h / 2 + 1);
+      }
     },
     drawCraftCard(ctx, r, c) {
       const stationOk = !r.station || this.nearFurnace();
