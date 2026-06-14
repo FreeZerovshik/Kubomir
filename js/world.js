@@ -872,6 +872,30 @@
   };
 
   /* ---- Персонаж «Стив» (вид сверху ¾, блочный, узнаваемые цвета) ---- */
+  // 🎨 цвет тира снаряжения по id — чтобы не-читающий ребёнок различал дерево/камень/железо/алмаз… по ЦВЕТУ
+  G.tierColor = function (id) {
+    if (!id) return null;
+    if (id.indexOf("wood") >= 0) return ["#c8924a", "#7a4f22"];
+    if (id.indexOf("stone") >= 0) return ["#b0b6c0", "#6e727c"];
+    if (id.indexOf("iron") >= 0) return ["#e6eaf2", "#9aa0ac"];
+    if (id.indexOf("diamond") >= 0) return ["#7ce2ff", "#2a9ad0"];
+    if (id.indexOf("emerald") >= 0) return ["#5ce888", "#1f9a48"];
+    if (id.indexOf("obsidian") >= 0) return ["#a274e0", "#3a1e60"];
+    if (id.indexOf("gold") >= 0) return ["#ffda5a", "#c89a20"];
+    if (id.indexOf("fire") >= 0) return ["#ff9442", "#a0340a"];
+    if (id.indexOf("frost") >= 0) return ["#a8e8ff", "#3a8ac0"];
+    return null;
+  };
+  // цветной «чип» материала за иконкой снаряжения (форма эмодзи = ЧТО, цвет чипа = ТИР)
+  G.tierChip = function (ctx, item, cx, cy, r) {
+    if (!item || !(item.tool || item.weapon || item.shield || item.armor)) return false;
+    const col = G.tierColor(item.id); if (!col) return false;
+    const g = ctx.createRadialGradient(cx, cy - r * 0.3, 1, cx, cy, r * 1.2);
+    g.addColorStop(0, col[0]); g.addColorStop(1, col[1]);
+    ctx.fillStyle = g; G.rr(ctx, cx - r, cy - r, r * 2, r * 2, r * 0.42); ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.28)"; ctx.lineWidth = 2; G.rr(ctx, cx - r, cy - r, r * 2, r * 2, r * 0.42); ctx.stroke();
+    return true;
+  };
   G.drawSteve = function (ctx, x, y, face, walk, swing, held) {
     const f = face < 0 ? -1 : 1;
     const sw = Math.sin(walk * PI * 2) * 5;      // мах ног при ходьбе
@@ -925,6 +949,7 @@
     else if (held === "bow") armDeg = -8;                                          // держит лук ровно
     else if (held === "tome") armDeg = -26 - (sg ? Math.sin(sg * PI) * 14 : 0);    // выпад посохом
     else armDeg = -10 + (sg ? Math.sin(sg * PI) * 52 : 0);                         // кулак
+    if (!sg) armDeg += Math.sin(walk * PI * 2) * -14;                              // 🚶 естественный мах руки при ходьбе (в противофазе к ногам)
     ctx.save();
     ctx.translate(10, -4); ctx.rotate(armDeg * PI / 180);
     ctx.fillStyle = PAL.steveSkin; ctx.fillRect(0, -2.5, 13, 5);                   // предплечье вперёд

@@ -1278,7 +1278,9 @@
         rr(ctx, r.x, r.y, r.w, r.h, 10); ctx.stroke();
         if (slot) {
           const it = G.ITEMS[slot.item];
-          ctx.textAlign = "center"; ctx.font = G.f(34); ctx.fillStyle = "#fff";
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          G.tierChip(ctx, it, r.x + r.w / 2, r.y + r.h / 2 - 1, 21);
+          ctx.font = G.f(34); ctx.fillStyle = "#fff";
           ctx.fillText(it ? it.icon : "?", r.x + r.w / 2, r.y + r.h / 2 - 1);
           ctx.textAlign = "right"; ctx.font = G.f(17, "bold");
           ctx.fillText("" + slot.n, r.x + r.w - 7, r.y + r.h - 12);
@@ -1323,8 +1325,9 @@
       rr(ctx, c.x, c.y, c.w, c.h, 12); ctx.fill();
       ctx.lineWidth = 2; ctx.strokeStyle = can ? PAL.green : "rgba(255,255,255,0.12)";
       rr(ctx, c.x, c.y, c.w, c.h, 12); ctx.stroke();
-      ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#fff";
-      ctx.font = G.f(38); ctx.fillText(out ? out.icon : "?", c.x + c.w / 2, c.y + 38);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      G.tierChip(ctx, out, c.x + c.w / 2, c.y + 38, 25);                            // 🎨 цветной чип тира за иконкой
+      ctx.fillStyle = "#fff"; ctx.font = G.f(38); ctx.fillText(out ? out.icon : "?", c.x + c.w / 2, c.y + 38);
       ctx.font = G.f(13, "bold"); ctx.fillText((out ? out.name : r.out) + (r.n > 1 ? " ×" + r.n : ""), c.x + c.w / 2, c.y + 68);
       ctx.font = G.f(16); let iy = c.y + 92;
       for (const pr of r.in) {
@@ -1408,7 +1411,7 @@
       const cell = (r, c, sel) => {
         ctx.fillStyle = "rgba(255,255,255,0.07)"; rr(ctx, r.x, r.y, r.w, r.h, 8); ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = sel ? PAL.btn : "rgba(255,255,255,0.16)"; rr(ctx, r.x, r.y, r.w, r.h, 8); ctx.stroke();
-        if (c) { const it = G.ITEMS[c.item]; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = G.f(28); ctx.fillStyle = "#fff"; ctx.fillText(it ? it.icon : "?", r.x + r.w / 2, r.y + r.h / 2 - 1); ctx.textAlign = "right"; ctx.font = G.f(14, "bold"); ctx.fillText("" + c.n, r.x + r.w - 5, r.y + r.h - 8); }
+        if (c) { const it = G.ITEMS[c.item]; ctx.textAlign = "center"; ctx.textBaseline = "middle"; G.tierChip(ctx, it, r.x + r.w / 2, r.y + r.h / 2 - 1, 18); ctx.font = G.f(28); ctx.fillStyle = "#fff"; ctx.fillText(it ? it.icon : "?", r.x + r.w / 2, r.y + r.h / 2 - 1); ctx.textAlign = "right"; ctx.font = G.f(14, "bold"); ctx.fillText("" + c.n, r.x + r.w - 5, r.y + r.h - 8); }
       };
       for (let i = 0; i < 16; i++) cell(this.chestSlotRect(i, "box"), box[i], false);
       const ir0 = this.chestSlotRect(0, "inv");
@@ -1436,7 +1439,9 @@
         rr(ctx, r.x, r.y, r.w, r.h, 9); ctx.stroke();
         if (slot) {
           const it = G.ITEMS[slot.item];
-          ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = G.f(34); ctx.fillStyle = "#fff";
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          G.tierChip(ctx, it, r.x + r.w / 2, r.y + r.h / 2 - 1, 21);
+          ctx.font = G.f(34); ctx.fillStyle = "#fff";
           ctx.fillText(it ? it.icon : "?", r.x + r.w / 2, r.y + r.h / 2 - 1);
           ctx.textAlign = "right"; ctx.font = G.f(16, "bold");
           ctx.fillText("" + slot.n, r.x + r.w - 6, r.y + r.h - 11);
