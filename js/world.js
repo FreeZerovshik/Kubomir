@@ -917,7 +917,7 @@
     ctx.restore();
     return true;
   };
-  G.drawSteve = function (ctx, x, y, face, walk, swing, held) {
+  G.drawSteve = function (ctx, x, y, face, walk, swing, held, mat) {   // mat=[свет,тень] цвет материала головы/клинка (по тиру), опционально
     const f = face < 0 ? -1 : 1;
     const sw = Math.sin(walk * PI * 2) * 5;      // мах ног при ходьбе
     const bob = Math.abs(Math.sin(walk * PI * 2)) * 1.6;
@@ -978,13 +978,13 @@
     if (held === "sword") {
       ctx.fillStyle = "#caa86a"; ctx.fillRect(hx - 1, -2, 4, 4);                   // рукоять
       ctx.fillStyle = "#9a9aa4"; ctx.fillRect(hx - 2, -4, 3, 8);                   // гарда
-      ctx.fillStyle = "#dfe4ee"; ctx.fillRect(hx + 2, -2.5, 22, 5);               // клинок
-      ctx.fillStyle = "#fff"; ctx.fillRect(hx + 2, -2.5, 22, 1.5);                // блик
+      ctx.fillStyle = mat ? mat[0] : "#dfe4ee"; ctx.fillRect(hx + 2, -2.5, 22, 5);  // клинок (цвет материала)
+      ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.fillRect(hx + 2, -2.5, 22, 1.5);  // блик
     } else if (held === "pick") {
       ctx.fillStyle = "#9a6a36"; ctx.fillRect(hx, -2, 20, 4);                       // черенок вперёд от руки
       ctx.fillStyle = "#754f26"; ctx.fillRect(hx, 1.2, 20, 1.4);                     // тень черенка
       const px = hx + 20;                                                            // двузубая изогнутая голова кирки на конце
-      ctx.fillStyle = "#cdd2dc"; ctx.strokeStyle = "#9297a6"; ctx.lineWidth = 1.5; ctx.lineJoin = "round";
+      ctx.fillStyle = mat ? mat[0] : "#cdd2dc"; ctx.strokeStyle = mat ? mat[1] : "#9297a6"; ctx.lineWidth = 1.5; ctx.lineJoin = "round"; // цвет материала
       ctx.beginPath();
       ctx.moveTo(px - 2, -13);                                                        // верхнее остриё
       ctx.quadraticCurveTo(px + 8, 0, px - 2, 13);                                    // передняя дуга через носок к нижнему остриё
