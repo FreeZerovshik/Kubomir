@@ -917,7 +917,7 @@
     ctx.restore();
     return true;
   };
-  G.drawSteve = function (ctx, x, y, face, walk, swing, held, mat) {   // mat=[свет,тень] цвет материала головы/клинка (по тиру), опционально
+  G.drawSteve = function (ctx, x, y, face, walk, swing, held, mat, heldObj) {   // mat=[свет,тень] цвет тира; heldObj=предмет для held==="item" (блок/эмодзи в руке)
     const f = face < 0 ? -1 : 1;
     const sw = Math.sin(walk * PI * 2) * 5;      // мах ног при ходьбе
     const bob = Math.abs(Math.sin(walk * PI * 2)) * 1.6;
@@ -1006,6 +1006,18 @@
       ctx.strokeStyle = "#8a5a2e"; ctx.lineWidth = 2.6; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(hx, 1); ctx.lineTo(hx + 23, -15); ctx.stroke(); // удилище вверх-вперёд
       ctx.strokeStyle = "rgba(232,240,255,0.85)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(hx + 23, -15); ctx.lineTo(hx + 23, 9); ctx.stroke();    // леска свисает
       ctx.fillStyle = "#e24b4b"; circle(ctx, hx + 23, 10, 2.6); ctx.fillStyle = "#fff"; ctx.fillRect(hx + 21.5, 9, 3, 1.4);                                 // поплавок
+    } else if (held === "item" && heldObj) {                                       // 🧱 держим ЛЮБОЙ предмет: блок-кубик его цвета / эмодзи
+      const b = heldObj.place && World.BLOCKS[World.OBJ[heldObj.place]];
+      if (b && b.col) {
+        const bx = hx + 6, bw = 14;
+        ctx.fillStyle = b.colDk || b.col; G.rr(ctx, bx - bw / 2, -bw / 2 - 1, bw, bw, 3); ctx.fill();
+        ctx.fillStyle = b.col; G.rr(ctx, bx - bw / 2 + 1.5, -bw / 2 + 0.5, bw - 4, bw - 4, 2); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.22)"; G.rr(ctx, bx - bw / 2 + 1.5, -bw / 2 + 0.5, bw - 4, (bw - 4) * 0.42, 2); ctx.fill();
+      } else {
+        ctx.save(); ctx.translate(hx + 6, -1); ctx.scale(f, 1);                     // компенсировать зеркало по направлению взгляда
+        ctx.font = "15px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#fff";
+        ctx.fillText(heldObj.icon || "?", 0, 0); ctx.restore();
+      }
     } else {
       ctx.fillStyle = PAL.steveSkin; ctx.fillRect(hx - 1, -3, 6, 6);              // кулак
     }
