@@ -981,7 +981,17 @@
       ctx.fillStyle = "#dfe4ee"; ctx.fillRect(hx + 2, -2.5, 22, 5);               // клинок
       ctx.fillStyle = "#fff"; ctx.fillRect(hx + 2, -2.5, 22, 1.5);                // блик
     } else if (held === "pick") {
-      ctx.fillStyle = "#8a6a3a"; ctx.fillRect(hx, -10, 3, 18); ctx.fillStyle = "#c9c9d2"; ctx.fillRect(hx - 4, -14, 11, 6);
+      ctx.fillStyle = "#9a6a36"; ctx.fillRect(hx, -2, 20, 4);                       // черенок вперёд от руки
+      ctx.fillStyle = "#754f26"; ctx.fillRect(hx, 1.2, 20, 1.4);                     // тень черенка
+      const px = hx + 20;                                                            // двузубая изогнутая голова кирки на конце
+      ctx.fillStyle = "#cdd2dc"; ctx.strokeStyle = "#9297a6"; ctx.lineWidth = 1.5; ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(px - 2, -13);                                                        // верхнее остриё
+      ctx.quadraticCurveTo(px + 8, 0, px - 2, 13);                                    // передняя дуга через носок к нижнему остриё
+      ctx.quadraticCurveTo(px - 5, 0, px - 2, -13);                                   // задняя дуга обратно → серп
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#eef1f7"; ctx.fillRect(px - 1, -10, 1.6, 20);                  // блик
+      ctx.fillStyle = "#5a3f24"; ctx.fillRect(px - 4, -2.5, 6, 5);                    // крепление головы к черенку
     } else if (held === "bow") {
       ctx.strokeStyle = "#9a6a32"; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(hx, 0, 13, -1.25, 1.25); ctx.stroke();
       const dr = sg * 6;                                                           // натяжение тетивы
