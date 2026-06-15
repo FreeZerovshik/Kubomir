@@ -854,7 +854,7 @@
       ctx.translate(-Math.round(G.cam.x), -Math.round(G.cam.y));
       const px = this.px, py = this.py, face = this.fx, walk = this.walk;
       const swing = this.swingT || 0;   // фаза замаха (мин/бой/лук/каст)
-      const heldK = (function () { const z = G.invSel(), it = z && G.ITEMS[z.item]; if (!it) return null; if (it.weapon) return "sword"; if (z.item === "bow") return "bow"; if (it.tool === "pick") return "pick"; if (it.spell) return "tome"; return null; })();
+      const heldK = (function () { const z = G.invSel(), it = z && G.ITEMS[z.item]; if (!it) return null; if (it.weapon) return "sword"; if (z.item === "bow") return "bow"; if (it.tool === "pick") return "pick"; if (it.spell) return "tome"; if (z.item === "fishing_rod") return "rod"; return null; })();
       const heldMat = (function () { const z = G.invSel(), it = z && G.ITEMS[z.item]; return (it && (it.weapon || it.tool === "pick")) ? G.tierColor(z.item) : null; })(); // 🎨 цвет головы/клинка по тиру
       const me = this;
       const sprites = [{ baseY: py + 16, sprite: (c) => { if (me._onBoat) me.drawBoat(c, px, py); if (me._onRail) me.drawCart(c, px, py); if (me._dashT > 0) { c.save(); c.translate(px, py); c.rotate((1 - me._dashT / 0.2) * (me._dashDX >= 0 ? 1 : -1) * PI * 1.7); c.translate(-px, -py); G.drawSteve(c, px, py, face, walk, swing, heldK, heldMat); c.restore(); } else G.drawSteve(c, px, py, face, walk, swing, heldK, heldMat); if (me._dmgFlash > 0) { c.globalAlpha = Math.min(0.55, me._dmgFlash * 1.4); c.fillStyle = "#ff3030"; c.fillRect(px - 12, py - 27, 24, 44); c.globalAlpha = 1; } } }];

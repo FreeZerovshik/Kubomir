@@ -1002,6 +1002,10 @@
       ctx.fillStyle = "#5a3f8a"; G.rr(ctx, hx - 1, -5, 8, 10, 2); ctx.fill();      // книга
       ctx.fillStyle = "#caa84a"; ctx.fillRect(hx + 2, -5, 1.5, 10);
       ctx.fillStyle = "rgba(180,140,255,0.95)"; circle(ctx, hx + 3, -9, 3 + (sg ? Math.abs(Math.sin(sg * PI * 2)) * 2 : 0)); // светящийся шар
+    } else if (held === "rod") {
+      ctx.strokeStyle = "#8a5a2e"; ctx.lineWidth = 2.6; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(hx, 1); ctx.lineTo(hx + 23, -15); ctx.stroke(); // удилище вверх-вперёд
+      ctx.strokeStyle = "rgba(232,240,255,0.85)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(hx + 23, -15); ctx.lineTo(hx + 23, 9); ctx.stroke();    // леска свисает
+      ctx.fillStyle = "#e24b4b"; circle(ctx, hx + 23, 10, 2.6); ctx.fillStyle = "#fff"; ctx.fillRect(hx + 21.5, 9, 3, 1.4);                                 // поплавок
     } else {
       ctx.fillStyle = PAL.steveSkin; ctx.fillRect(hx - 1, -3, 6, 6);              // кулак
     }
