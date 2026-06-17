@@ -261,6 +261,12 @@
       const oi = World.oTile(tx, ty), b = World.BLOCKS[oi];
       if (b && b.store) { this.openChest(tx, ty); return; }                  // открыть сундук
       if (b && b.id === "furnace") { this._craftOpen = true; this._invOpen = false; this._craftTab = 0; this._craftPage = 0; G.audio.blip(); this.addFloater(tx * TILE + TILE / 2, ty * TILE + TILE / 2 - 16, "🔥 плавильня", "#ffce4a"); return; } // 🔥 печь = станция плавки → крафт (руда→слиток, песок→стекло…)
+      if (b && b.sleep) {                                                    // 🛏 тап по кровати: ночью — спать до утра; всегда — точка возрождения
+        G.state.homeX = this.px; G.state.homeY = this.py; G.state.quests.sleep = 1;
+        if (G.daylight() < 0.5) this.sleep();
+        else { G.audio.tone(392, 0.14, "sine", 0.05); G.fx.burst(this.px, this.py - 10, "#cdeaff", 10, 80, 0.5); this.addFloater(this.px, this.py - 22, "🛏 точка возрождения", "#cdeaff"); }
+        return;
+      }
       if (b && b.door) { World.edit(tx, ty, b.open ? World.OBJ.door : World.OBJ.door_open); G.audio.pop(); return; } // 🚪 открыть/закрыть дверь
       if (b && b.lever) { const on = !b.on; World.edit(tx, ty, on ? World.OBJ.lever_on : World.OBJ.lever); const _lit = this.powerArea(tx, ty, on); if (on && _lit > 0) G.state.quests.redstone = 1; G.audio.pop(); G.shake(2); return; } // 🔴 рычаг
       if (b && b.lock && !b.open) {  // ⚔ запертая дверь Храма — нужен ключ
@@ -395,14 +401,14 @@
         G.fx.burst(cx, cy - 8, "#9fd35a", 8, 90, 0.4);
       } else if (t.b.drop) { G.invAdd(t.b.drop, t.b.yield || 1); G.audio.pickup(); if (/coal|iron|gold|diamond|ghost_shard/.test(t.b.drop)) this.addFloater(cx, cy - 14, "+" + (G.ITEMS[t.b.drop] ? G.ITEMS[t.b.drop].icon : "?") + ((t.b.yield || 1) > 1 ? "×" + t.b.yield : ""), "#ffe08a"); }
       else G.audio.pop();
-      if (t.b.id === "tree") G.state.quests.chop = 1;
+      if (t.b.id === "tree") { G.state.quests.chop = 1; if (Math.random() < 0.35) { G.invAdd("apple", 1); this.addFloater(cx, cy - 14, "+🍎", "#ff7a7a"); } } // 🍎 ~35% яблоко с дерева — простая еда
       G.fx.burst(cx, cy - 10, dropColor(t.b), 14, 160, 0.5);
       this.addXp(t.b.special === "treasure" ? 8 : /coal|iron|gold|diamond|ghost_shard/.test(t.b.drop || "") ? 4 : 1); // 🆙 опыт за добычу
       G.shake(4); G.hitStop(0.03);
     },
 
     nearestMob() {
-      let best = null, bs = 1e9, R = TILE * 1.5;
+      let best = null, bs = 1e9, R = TILE * 1.85;
       for (const mu of this.mobs) {
         const d = dist(this.px, this.py, mu.x, mu.y);
         if (d > R + mu.K.r) continue;
@@ -732,8 +738,7 @@
         else if (tb && tb.trans === "astral") this.goAstral();
         else if (tb && tb.trans === "home") this.toSurface();
         else if (tb && tb.trans === "temple") this.goTemple();
-        else if (tb && tb.sleep) { this._lastTransTile = tKey; if (G.daylight() < 0.5) this.sleep(); } // кровать ночью → утро
-        else this._lastTransTile = null;
+        else this._lastTransTile = null;   // (сон теперь по ТАПУ кровати, а не проходом — см. onTap)
       }
 
       // действие: сперва моб в зоне удара (бой), иначе добыча блока
@@ -771,7 +776,7 @@
         this.mobTarget = null; this.target = null; this._weak = false; this.mineT = 0;
         this.swingT = Math.min(0.98, this.swingT + dt * 3);
         if (this._bowCd <= 0) { this._bowCd = 0.7; this.shootArrow(); }
-      } else if ((this.mobTarget = this.acting ? this.nearestMob() : null)) {
+      } else if ((this.mobTarget = this.acting ? ((this.swingT > 0 && this.mobTarget && !this.mobTarget._dead && this.mobs.indexOf(this.mobTarget) >= 0) ? this.mobTarget : this.nearestMob()) : null)) { // 🐷 держим цель на время замаха — добиваем убегающее животное
         this.target = null; this._weak = false; this.mineT = 0;
         this.swingT += dt * 3.6;
         if (this.swingT >= 1) { this.swingT = 0; const _eit = G.ITEMS[(G.invSel() || {}).item], _mt = this.mobTarget; G.hitMob(this, _mt, G.playerAtk() + (this._strT > 0 ? 2 : 0));
@@ -895,11 +900,16 @@
     },
 
     drawMineProgress(ctx, t) {
-      const cx = t.tx * TILE + TILE / 2, y = t.ty * TILE - 8;
+      const cx = t.tx * TILE + TILE / 2, y = t.ty * TILE - 14;
       const need = (t.b.hardness * BASE_BREAK) / this.toolPower;
       const p = clamp(this.mineT / need, 0, 1);
-      ctx.fillStyle = "rgba(0,0,0,0.55)"; rr(ctx, cx - 23, y, 46, 8, 4); ctx.fill();
-      ctx.fillStyle = PAL.btn; rr(ctx, cx - 22, y + 1, 44 * p, 6, 3); ctx.fill();
+      const W = 52, H = 11, rem = 1 - p;                                      // 🔨 «прочность» блока: убывает по мере ломания
+      ctx.fillStyle = "rgba(0,0,0,0.6)"; rr(ctx, cx - W / 2 - 2, y - 2, W + 4, H + 4, 5); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.18)"; rr(ctx, cx - W / 2, y, W, H, 4); ctx.fill();
+      ctx.fillStyle = rem > 0.5 ? "#5fd86a" : rem > 0.22 ? "#ffce4a" : "#ff6b5a"; // зелёный→жёлтый→красный
+      rr(ctx, cx - W / 2, y, W * rem, H, 4); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.font = G.f(11, "900"); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("🔨", cx, y - 12);                                          // значок «ломаю» над баром
     },
 
     // --- торговля с жителем ---

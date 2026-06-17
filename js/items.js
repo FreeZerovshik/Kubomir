@@ -14,6 +14,7 @@
     coal:  { id: "coal",  name: "Уголь",  icon: "⚫", stack: 64 },
     iron:  { id: "iron",  name: "Железо", icon: "🔩", stack: 64 },
     berry: { id: "berry", name: "Ягоды",  icon: "🍒", stack: 64, food: 6 },
+    apple: { id: "apple", name: "Яблоко", icon: "🍎", stack: 64, food: 5 },   // 🍎 падает с деревьев — простая еда
     plank: { id: "plank", name: "Доски",  icon: "🟫", stack: 64, place: "woodblock" },
     stick: { id: "stick", name: "Палки",  icon: "🥢", stack: 64 },
     pick_wood:  { id: "pick_wood",  name: "Деревянная кирка", icon: "⛏", stack: 1, tool: "pick", power: 2 },
