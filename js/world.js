@@ -903,19 +903,10 @@
     if (!item || !item.place) return false;
     const b = World.BLOCKS[World.OBJ[item.place]];
     if (!b || !b.col) return false;                                   // только блоки с заданным цветом (BUILD_SPEC); спец-блоки (печь/факел) — эмодзи
+    const s = (r * 2.05) / 32;                                         // блок 32px (как в мире) → ~2r: рисуем ТЕМ ЖЕ drawCube → иконка = блок
     ctx.save();
-    ctx.fillStyle = b.colDk || b.col; G.rr(ctx, cx - r, cy - r, r * 2, r * 2, r * 0.26); ctx.fill();
-    ctx.fillStyle = b.col; G.rr(ctx, cx - r + 2, cy - r + 2, r * 2 - 4, r * 2 - 4, r * 0.2); ctx.fill();
-    ctx.strokeStyle = b.colDk || "rgba(0,0,0,0.3)"; ctx.lineWidth = Math.max(1, r * 0.08);
-    if (b.pat === "brick") {
-      ctx.beginPath(); ctx.moveTo(cx - r + 2, cy); ctx.lineTo(cx + r - 2, cy);
-      ctx.moveTo(cx, cy - r + 3); ctx.lineTo(cx, cy - 2); ctx.moveTo(cx - r * 0.5, cy + 2); ctx.lineTo(cx - r * 0.5, cy + r - 3); ctx.moveTo(cx + r * 0.5, cy + 2); ctx.lineTo(cx + r * 0.5, cy + r - 3); ctx.stroke();
-    } else if (b.pat === "plank" || b.pat === "tile") {
-      ctx.beginPath(); ctx.moveTo(cx - r + 2, cy - r * 0.4); ctx.lineTo(cx + r - 2, cy - r * 0.4); ctx.moveTo(cx - r + 2, cy + r * 0.4); ctx.lineTo(cx + r - 2, cy + r * 0.4); ctx.stroke();
-    } else if (b.pat === "window" || b.vitrazh || b.glass) {
-      ctx.fillStyle = "rgba(255,255,255,0.32)"; G.rr(ctx, cx - r * 0.5, cy - r * 0.5, r, r, 2); ctx.fill();
-    }
-    ctx.fillStyle = "rgba(255,255,255,0.18)"; G.rr(ctx, cx - r + 2, cy - r + 2, r * 2 - 4, r * 0.5, r * 0.2); ctx.fill(); // блик сверху
+    ctx.translate(cx, cy); ctx.scale(s, s);
+    drawCube(ctx, 0, 15.5, b.col, b.colDk || b.col, b.pat);
     ctx.restore();
     return true;
   };
@@ -1011,10 +1002,7 @@
     } else if (held === "item" && heldObj) {                                       // 🧱 держим ЛЮБОЙ предмет: блок-кубик его цвета / эмодзи
       const b = heldObj.place && World.BLOCKS[World.OBJ[heldObj.place]];
       if (b && b.col) {
-        const bx = hx + 6, bw = 14;
-        ctx.fillStyle = b.colDk || b.col; G.rr(ctx, bx - bw / 2, -bw / 2 - 1, bw, bw, 3); ctx.fill();
-        ctx.fillStyle = b.col; G.rr(ctx, bx - bw / 2 + 1.5, -bw / 2 + 0.5, bw - 4, bw - 4, 2); ctx.fill();
-        ctx.fillStyle = "rgba(255,255,255,0.22)"; G.rr(ctx, bx - bw / 2 + 1.5, -bw / 2 + 0.5, bw - 4, (bw - 4) * 0.42, 2); ctx.fill();
+        ctx.save(); ctx.translate(hx + 8, -2); ctx.scale(16 / 32, 16 / 32); drawCube(ctx, 0, 15.5, b.col, b.colDk || b.col, b.pat); ctx.restore(); // тот же блок, что в мире/инвентаре (~16px)
       } else {
         ctx.save(); ctx.translate(hx + 6, -1); ctx.scale(f, 1);                     // компенсировать зеркало по направлению взгляда
         ctx.font = "15px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#fff";
