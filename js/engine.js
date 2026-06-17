@@ -146,7 +146,7 @@
       g.addColorStop(0, "rgba(0,0,0,1)"); g.addColorStop(0.55, "rgba(0,0,0,0.82)"); g.addColorStop(1, "rgba(0,0,0,0)");
       lx.fillStyle = g; lx.fillRect(sx - r, sy - r, r * 2, r * 2);
     };
-    if (scene && scene.px != null) punch(scene.px, scene.py, scene.lightR || 150); // игрок — слабый источник
+    if (scene && scene.px != null) punch(scene.px, scene.py, scene.lightR || (G.state.depth > 0 ? 80 : 150)); // игрок: в пещере слабее (нужны факелы), на поверхности шире
     if (G.World && G.World.eachVisibleLight) G.World.eachVisibleLight(punch);       // факелы/печь
     ctx.drawImage(lc, 0, 0, G.VIEW.w, G.VIEW.h); // тьма с прозрачными дырами — поверх мира
   };

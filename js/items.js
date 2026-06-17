@@ -9,13 +9,13 @@
 
   // place: id блока из World.BLOCKS, который ставится этим предметом
   const ITEMS = {
-    wood:  { id: "wood",  name: "Дерево", icon: "🪵", stack: 99, place: "woodblock" },
-    stone: { id: "stone", name: "Камень", icon: "🪨", stack: 99, place: "stonebrick" },
-    coal:  { id: "coal",  name: "Уголь",  icon: "⚫", stack: 99 },
-    iron:  { id: "iron",  name: "Железо", icon: "🔩", stack: 99 },
-    berry: { id: "berry", name: "Ягоды",  icon: "🍒", stack: 99, food: 6 },
-    plank: { id: "plank", name: "Доски",  icon: "🟫", stack: 99, place: "woodblock" },
-    stick: { id: "stick", name: "Палки",  icon: "🥢", stack: 99 },
+    wood:  { id: "wood",  name: "Дерево", icon: "🪵", stack: 64, place: "woodblock" },
+    stone: { id: "stone", name: "Камень", icon: "🪨", stack: 64, place: "stonebrick" },
+    coal:  { id: "coal",  name: "Уголь",  icon: "⚫", stack: 64 },
+    iron:  { id: "iron",  name: "Железо", icon: "🔩", stack: 64 },
+    berry: { id: "berry", name: "Ягоды",  icon: "🍒", stack: 64, food: 6 },
+    plank: { id: "plank", name: "Доски",  icon: "🟫", stack: 64, place: "woodblock" },
+    stick: { id: "stick", name: "Палки",  icon: "🥢", stack: 64 },
     pick_wood:  { id: "pick_wood",  name: "Деревянная кирка", icon: "⛏", stack: 1, tool: "pick", power: 2 },
     pick_stone: { id: "pick_stone", name: "Каменная кирка",   icon: "⛏", stack: 1, tool: "pick", power: 4 },
     pick_iron:  { id: "pick_iron",  name: "Железная кирка",   icon: "⛏", stack: 1, tool: "pick", power: 6 },
@@ -24,42 +24,42 @@
     sword_iron:  { id: "sword_iron",  name: "Железный меч",   icon: "⚔", stack: 1, weapon: 6 },
     shield_wood: { id: "shield_wood", name: "Деревянный щит", icon: "🛡", stack: 1, shield: 0.3 },
     shield_iron: { id: "shield_iron", name: "Железный щит",   icon: "🛡", stack: 1, shield: 0.5 },
-    ingot:   { id: "ingot",   name: "Слиток железа", icon: "⛓", stack: 99 },
-    furnace: { id: "furnace", name: "Печь",          icon: "🔥", stack: 99, place: "furnace" },
-    torch:   { id: "torch",   name: "Факел",         icon: "🕯", stack: 99, place: "torch" },
-    gold:    { id: "gold",    name: "Золото",        icon: "🟡", stack: 99, place: "gold_block" },
-    diamond: { id: "diamond", name: "Алмаз",         icon: "💎", stack: 99 },
+    ingot:   { id: "ingot",   name: "Слиток железа", icon: "⛓", stack: 64 },
+    furnace: { id: "furnace", name: "Печь",          icon: "🔥", stack: 64, place: "furnace" },
+    torch:   { id: "torch",   name: "Факел",         icon: "🕯", stack: 64, place: "torch" },
+    gold:    { id: "gold",    name: "Золото",        icon: "🟡", stack: 64, place: "gold_block" },
+    diamond: { id: "diamond", name: "Алмаз",         icon: "💎", stack: 64 },
     pick_diamond:  { id: "pick_diamond",  name: "Алмазная кирка", icon: "⛏", stack: 1, tool: "pick", power: 9 },
     sword_diamond: { id: "sword_diamond", name: "Алмазный меч",   icon: "⚔", stack: 1, weapon: 8 },
-    emerald:       { id: "emerald",       name: "Изумруд",        icon: "💚", stack: 99 },
+    emerald:       { id: "emerald",       name: "Изумруд",        icon: "💚", stack: 64 },
     pick_emerald:  { id: "pick_emerald",  name: "Изумрудная кирка", icon: "⛏", stack: 1, tool: "pick", power: 12 },
     sword_emerald: { id: "sword_emerald", name: "Изумрудный меч",   icon: "⚔", stack: 1, weapon: 11 },
-    ember:    { id: "ember",    name: "Эмбер",     icon: "🟠", stack: 99 },                                          // 🌋 материал вулкана (из руды эмбера)
-    obsidian: { id: "obsidian", name: "Обсидиан",  icon: "⬛", stack: 99, place: "obsidian" },                       // тёмный камень — материал + строительный блок
+    ember:    { id: "ember",    name: "Эмбер",     icon: "🟠", stack: 64 },                                          // 🌋 материал вулкана (из руды эмбера)
+    obsidian: { id: "obsidian", name: "Обсидиан",  icon: "⬛", stack: 64, place: "obsidian" },                       // тёмный камень — материал + строительный блок
     sword_obsidian: { id: "sword_obsidian", name: "Обсидиановый меч", icon: "⚔", stack: 1, weapon: 10 },             // 🌋 сильный меч из вулкана (альтернатива алмазному пути)
-    magma_core: { id: "magma_core", name: "Сердце вулкана", icon: "🔆", stack: 99 },                                  // 🌋 трофей с Магма-стража
+    magma_core: { id: "magma_core", name: "Сердце вулкана", icon: "🔆", stack: 64 },                                  // 🌋 трофей с Магма-стража
     pick_obsidian: { id: "pick_obsidian", name: "Обсидиановая кирка", icon: "⛏", stack: 1, tool: "pick", power: 11 }, // завершает обсидиановый сет
     sword_fire:    { id: "sword_fire",    name: "Огненный меч",     icon: "🔥", stack: 1, weapon: 9, elem: "fire" },
     sword_frost:   { id: "sword_frost",   name: "Ледяной меч",      icon: "❄", stack: 1, weapon: 9, elem: "frost" },
-    mushroom:      { id: "mushroom",      name: "Гриб",           icon: "🍄", stack: 99, food: 3 },
-    mushroom_stew: { id: "mushroom_stew", name: "Грибной суп",    icon: "🍲", stack: 99, food: 8 },
-    meat:        { id: "meat",        name: "Мясо",         icon: "🥩", stack: 99, food: 3 },
-    cooked_meat: { id: "cooked_meat", name: "Жареное мясо", icon: "🍗", stack: 99, food: 8 },
-    clay:  { id: "clay",  name: "Глина",   icon: "🟤", stack: 99 },
-    sand:  { id: "sand",  name: "Песок",   icon: "🟨", stack: 99 },
-    brick: { id: "brick", name: "Кирпич",  icon: "🧱", stack: 99, place: "brick_block" },
-    glass: { id: "glass", name: "Стекло",  icon: "🔲", stack: 99, place: "glass_block" },
-    wool:  { id: "wool",  name: "Шерсть",  icon: "☁", stack: 99, place: "wool_block" },
+    mushroom:      { id: "mushroom",      name: "Гриб",           icon: "🍄", stack: 64, food: 3 },
+    mushroom_stew: { id: "mushroom_stew", name: "Грибной суп",    icon: "🍲", stack: 64, food: 8 },
+    meat:        { id: "meat",        name: "Мясо",         icon: "🥩", stack: 64, food: 3 },
+    cooked_meat: { id: "cooked_meat", name: "Жареное мясо", icon: "🍗", stack: 64, food: 8 },
+    clay:  { id: "clay",  name: "Глина",   icon: "🟤", stack: 64 },
+    sand:  { id: "sand",  name: "Песок",   icon: "🟨", stack: 64 },
+    brick: { id: "brick", name: "Кирпич",  icon: "🧱", stack: 64, place: "brick_block" },
+    glass: { id: "glass", name: "Стекло",  icon: "🔲", stack: 64, place: "glass_block" },
+    wool:  { id: "wool",  name: "Шерсть",  icon: "☁", stack: 64, place: "wool_block" },
     bed:   { id: "bed",   name: "Кровать", icon: "🛏", stack: 5, place: "bed" },
-    seeds: { id: "seeds", name: "Семена",  icon: "🌱", stack: 99 },
-    wheat: { id: "wheat", name: "Пшеница", icon: "🌾", stack: 99 },
-    bread: { id: "bread", name: "Хлеб",    icon: "🍞", stack: 99, food: 6 },
-    cookie:{ id: "cookie",name: "Печенье", icon: "🍪", stack: 99, food: 3 },
-    pie:   { id: "pie",   name: "Пирог",   icon: "🥧", stack: 99, food: 12 },
+    seeds: { id: "seeds", name: "Семена",  icon: "🌱", stack: 64 },
+    wheat: { id: "wheat", name: "Пшеница", icon: "🌾", stack: 64 },
+    bread: { id: "bread", name: "Хлеб",    icon: "🍞", stack: 64, food: 6 },
+    cookie:{ id: "cookie",name: "Печенье", icon: "🍪", stack: 64, food: 3 },
+    pie:   { id: "pie",   name: "Пирог",   icon: "🥧", stack: 64, food: 12 },
     compass: { id: "compass", name: "Компас", icon: "🧭", stack: 1 },
-    ghost_shard: { id: "ghost_shard", name: "Осколок духа", icon: "🔮", stack: 99 },
+    ghost_shard: { id: "ghost_shard", name: "Осколок духа", icon: "🔮", stack: 64 },
     portal:      { id: "portal", name: "Портал", icon: "🌀", stack: 9, place: "portal" },
-    astral_block:{ id: "astral_block", name: "Эфир-камень", icon: "🟪", stack: 99, place: "astral_block" },
+    astral_block:{ id: "astral_block", name: "Эфир-камень", icon: "🟪", stack: 64, place: "astral_block" },
     helmet_iron:    { id: "helmet_iron",    name: "Шлем",          icon: "⛑", stack: 1, armor: 0.12 },
     chest_iron:     { id: "chest_iron",     name: "Нагрудник",     icon: "🦺", stack: 1, armor: 0.20 },
     boots_iron:     { id: "boots_iron",     name: "Ботинки",       icon: "🥾", stack: 1, armor: 0.08 },
@@ -67,10 +67,10 @@
     chest_diamond:  { id: "chest_diamond",  name: "Алм. нагрудник", icon: "🦺", stack: 1, armor: 0.30 },
     boots_diamond:  { id: "boots_diamond",  name: "Алм. ботинки",  icon: "🥾", stack: 1, armor: 0.12 },
     bow:   { id: "bow",   name: "Лук",    icon: "🏹", stack: 1 },
-    arrow: { id: "arrow", name: "Стрела", icon: "🪶", stack: 99 },
+    arrow: { id: "arrow", name: "Стрела", icon: "🪶", stack: 64 },
     pet:   { id: "pet",   name: "Львёнок Лев", icon: "🦁", stack: 1 },
     fishing_rod: { id: "fishing_rod", name: "Удочка", icon: "🎣", stack: 1 },
-    fish:  { id: "fish",  name: "Рыба",   icon: "🐟", stack: 99, food: 5 },
+    fish:  { id: "fish",  name: "Рыба",   icon: "🐟", stack: 64, food: 5 },
     chest: { id: "chest", name: "Сундук", icon: "📦", stack: 9, place: "chest" },
     crown: { id: "crown", name: "Корона Короля", icon: "👑", stack: 9 },
     key:   { id: "key",   name: "Ключ Храма",   icon: "🗝", stack: 9 },
@@ -96,10 +96,10 @@
 
   // Добавить n предметов: сперва в существующий стек, иначе в пустой слот. false если полно.
   G.invAdd = function (itemId, n) {
-    n = n || 1; const inv = G.state.inv;
-    for (const slot of inv) if (slot && slot.item === itemId) { slot.n += n; return true; }
-    for (let i = 0; i < inv.length; i++) if (!inv[i]) { inv[i] = { item: itemId, n: n }; return true; }
-    return false;
+    n = n || 1; const inv = G.state.inv, it = G.ITEMS[itemId], cap = (it && it.stack) || 64;   // лимит стопки (как в Minecraft, обычно 64)
+    for (let i = 0; i < inv.length && n > 0; i++) { const s = inv[i]; if (s && s.item === itemId && s.n < cap) { const add = Math.min(n, cap - s.n); s.n += add; n -= add; } } // докинуть в существующие
+    for (let i = 0; i < inv.length && n > 0; i++) if (!inv[i]) { const add = Math.min(n, cap); inv[i] = { item: itemId, n: add }; n -= add; } // новые стопки ≤ cap
+    return n <= 0;   // false — не всё влезло (рюкзак полон)
   };
   G.invSel = function () { return G.state.inv[G.state.sel] || null; };
   G.invConsume = function (n) {
@@ -184,14 +184,14 @@
   const DYE_ICON = { red: "🟥", orange: "🟧", yellow: "🟨", green: "🟩", blue: "🟦", purple: "🟪", white: "⬜", black: "⬛" };
   const BUILD_ICON = { cobblestone: "🪨", stone_bricks: "🧱", mossy_bricks: "🧱", smooth_stone: "🪨", chiseled_stone: "🪨", sandstone: "🟨", dark_planks: "🟫", bookshelf: "📚", fence: "🪵", lamp: "💡" };
   for (const c in (G.DYE || {})) {
-    ITEMS["dye_" + c] = { id: "dye_" + c, name: "Краситель", icon: DYE_ICON[c] || "🎨", stack: 99 };
-    ITEMS["wool_" + c] = { id: "wool_" + c, name: "Цв. шерсть", icon: DYE_ICON[c] || "☁", stack: 99, place: "wool_" + c };
-    ITEMS["glass_" + c] = { id: "glass_" + c, name: "Цв. стекло", icon: DYE_ICON[c] || "🔲", stack: 99, place: "glass_" + c };
+    ITEMS["dye_" + c] = { id: "dye_" + c, name: "Краситель", icon: DYE_ICON[c] || "🎨", stack: 64 };
+    ITEMS["wool_" + c] = { id: "wool_" + c, name: "Цв. шерсть", icon: DYE_ICON[c] || "☁", stack: 64, place: "wool_" + c };
+    ITEMS["glass_" + c] = { id: "glass_" + c, name: "Цв. стекло", icon: DYE_ICON[c] || "🔲", stack: 64, place: "glass_" + c };
     RECIPES.push({ out: "wool_" + c, n: 1, cat: "color", in: [["wool", 1], ["dye_" + c, 1]] });
     RECIPES.push({ out: "glass_" + c, n: 1, cat: "color", in: [["glass", 1], ["dye_" + c, 1]] });
   }
   for (const b of (G.BUILD_SPEC || [])) {
-    ITEMS[b.id] = { id: b.id, name: b.name, icon: BUILD_ICON[b.id] || "🧱", stack: 99, place: b.id };
+    ITEMS[b.id] = { id: b.id, name: b.name, icon: BUILD_ICON[b.id] || "🧱", stack: 64, place: b.id };
     RECIPES.push({ out: b.id, n: b.id === "stone_bricks" ? 4 : 1, cat: "build", station: b.station, in: b.rec });
   }
   G.canCraft = (r) => (!r.once || G.invCount(r.out) === 0) && r.in.every((p) => G.invCount(p[0]) >= p[1]);

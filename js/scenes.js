@@ -260,6 +260,7 @@
       if (!this.inRange(tx, ty)) return;
       const oi = World.oTile(tx, ty), b = World.BLOCKS[oi];
       if (b && b.store) { this.openChest(tx, ty); return; }                  // открыть сундук
+      if (b && b.id === "furnace") { this._craftOpen = true; this._invOpen = false; this._craftTab = 0; this._craftPage = 0; G.audio.blip(); this.addFloater(tx * TILE + TILE / 2, ty * TILE + TILE / 2 - 16, "🔥 плавильня", "#ffce4a"); return; } // 🔥 печь = станция плавки → крафт (руда→слиток, песок→стекло…)
       if (b && b.door) { World.edit(tx, ty, b.open ? World.OBJ.door : World.OBJ.door_open); G.audio.pop(); return; } // 🚪 открыть/закрыть дверь
       if (b && b.lever) { const on = !b.on; World.edit(tx, ty, on ? World.OBJ.lever_on : World.OBJ.lever); const _lit = this.powerArea(tx, ty, on); if (on && _lit > 0) G.state.quests.redstone = 1; G.audio.pop(); G.shake(2); return; } // 🔴 рычаг
       if (b && b.lock && !b.open) {  // ⚔ запертая дверь Храма — нужен ключ
@@ -528,7 +529,7 @@
       this.petX += (this.px - 26 - this.petX) * Math.min(1, dt * 4);
       this.petY += (this.py + 8 - this.petY) * Math.min(1, dt * 4);
       this._petCd = Math.max(0, (this._petCd || 0) - dt);
-      if (this._petCd <= 0) for (const m of this.mobs) { if (!m.K.passive && dist(this.petX, this.petY, m.x, m.y) < 72) { G.hitMob(this, m, 2); this._petCd = 0.7; this.petX = m.x; this.petY = m.y; break; } }
+      if (this._petCd <= 0) for (const m of this.mobs) { if (!m.K.passive && dist(this.petX, this.petY, m.x, m.y) < 66) { G.hitMob(this, m, 1); this._petCd = 1.2; this.petX = m.x; this.petY = m.y; break; } } // 🦁 помощник: 1 урон/1.2с (не убивает с одного удара)
     },
     drawPet(ctx, x, y) {     // 🦁 львёнок «Лев» (по имени Льва — лев!)
       ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.beginPath(); ctx.ellipse(x, y + 10, 11, 5, 0, 0, PI * 2); ctx.fill();              // тень (без качания)
@@ -1455,6 +1456,11 @@
           ctx.fillText("" + slot.n, r.x + r.w - 6, r.y + r.h - 11);
         }
       }
+      // 🏷 название выбранного предмета (тапни слот → видно, что это; для не-читающего — иконка крупно + имя)
+      const selSlot = G.state.inv[G.state.sel], selIt = selSlot && G.ITEMS[selSlot.item];
+      ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = G.f(20, "900");
+      ctx.fillStyle = selIt ? "#ffce4a" : "rgba(255,255,255,0.4)";
+      ctx.fillText(selIt ? (selIt.icon + "  " + selIt.name) : "— тапни предмет, чтобы взять и узнать название —", p.x + p.w / 2, p.y + p.h - 24);
     },
 
     drawHint(ctx) {

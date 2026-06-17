@@ -630,8 +630,10 @@
         ctx.fillStyle = PAL.stoneDk; G.rr(ctx, cxp - 16, top, 32, 33, 4); ctx.fill();
         ctx.fillStyle = PAL.stone; G.rr(ctx, cxp - 14, top + 2, 28, 28, 3); ctx.fill();
         ctx.fillStyle = "#26262c"; G.rr(ctx, cxp - 9, top + 13, 18, 15, 2); ctx.fill();   // топка
+        const ff = 0.5 + 0.5 * Math.abs(Math.sin(G.time * 7 + cxp * 0.3));                 // 🔥 пляшущее пламя
         ctx.fillStyle = "#ff8a3a"; G.rr(ctx, cxp - 7, top + 19, 14, 8, 2); ctx.fill();
-        ctx.fillStyle = "#ffd24a"; ctx.fillRect(cxp - 3, top + 21, 6, 5);                  // пламя
+        ctx.fillStyle = "#ffd24a"; ctx.fillRect(cxp - 3, top + 22 - ff * 4, 6, 5 + ff * 4);  // язык пламени пляшет
+        ctx.fillStyle = "#fff0a0"; ctx.fillRect(cxp - 1.5, top + 23 - ff * 3, 3, 3);          // ядро
         break;
       }
       case "torch": {
