@@ -380,24 +380,31 @@
   }
 
   /* ---- Сейв (каркас; мердж в дефолт — старые сейвы не ломаются, как в Mars) ---- */
-  const SAVE_KEY = "cubeworld_save_v1";
+  const SAVE_KEY = "cubeworld_save_v1";   // старый одиночный сейв → мигрируем в слот 0
+  const SLOTS = 3; G.SLOTS = SLOTS;
+  const slotKey = (s) => "cubeworld_world_" + (s != null ? s : G.activeSlot);
+  G.activeSlot = 0;
+  try { const a = localStorage.getItem("cubeworld_active_slot"); if (a != null) G.activeSlot = Math.max(0, Math.min(SLOTS - 1, parseInt(a, 10) || 0)); } catch (e) {}
+  try { if (!localStorage.getItem(slotKey(0)) && localStorage.getItem(SAVE_KEY)) { localStorage.setItem(slotKey(0), localStorage.getItem(SAVE_KEY)); localStorage.removeItem(SAVE_KEY); } } catch (e) {} // миграция старого сейва → слот 0
+  G.setSlot = function (s) { G.activeSlot = s; try { localStorage.setItem("cubeworld_active_slot", s); } catch (e) {} };
   G.saveGame = function () {
     try {
       const data = { state: G.state, dayCycle: G.dayCycle, edits: (G.World ? G.World.serialize() : null) };
-      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      localStorage.setItem(slotKey(), JSON.stringify(data));
     } catch (e) {}
   };
-  G.hasSave = function () { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } };
+  G.hasSave = function (s) { try { return !!localStorage.getItem(slotKey(s)); } catch (e) { return false; } };
+  G.slotInfo = function (s) { try { const d = JSON.parse(localStorage.getItem(slotKey(s)) || "null"); return d && d.state ? { day: d.state.day || 1, story: !!d.state.story, creative: !!d.state.creative } : null; } catch (e) { return null; } };
   G.loadGame = function () {
     try {
-      const d = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); if (!d) return false;
+      const d = JSON.parse(localStorage.getItem(slotKey()) || "null"); if (!d) return false;
       G.state = Object.assign(G.defaultState(), d.state || {});
       G.dayCycle = d.dayCycle != null ? d.dayCycle : 0.30;
       G._pendingEdits = d.edits || null;
       return true;
     } catch (e) { return false; }
   };
-  G.clearSave = function () { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} };
+  G.clearSave = function (s) { try { localStorage.removeItem(slotKey(s)); } catch (e) {} };
 
   /* ---- Главный цикл (ловит сбойный кадр, как в Mars) ---- */
   let last = 0;

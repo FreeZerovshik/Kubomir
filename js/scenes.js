@@ -103,13 +103,14 @@
   function circle(ctx, x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, PI * 2); ctx.fill(); }
 
   /* ========================= МЕНЮ ========================= */
-  const freeRect = { x: VIEW.w / 2 - 184, y: 352, w: 176, h: 64 };
-  const storyRect = { x: VIEW.w / 2 + 8, y: 352, w: 176, h: 64 };
-  const contRect = { x: VIEW.w / 2 - 150, y: 426, w: 300, h: 52 };
-  const soundRect = { x: VIEW.w / 2 - 150, y: 488, w: 300, h: 46 };
-  const diffRect = { x: VIEW.w / 2 - 150, y: 544, w: 300, h: 46 };
-  const creativeRect = { x: VIEW.w / 2 - 150, y: 628, w: 300, h: 40 };
-  let menuCreative = false;
+  const SLOT_W = 544, SLOT_X = VIEW.w / 2 - SLOT_W / 2;
+  const slotRects = [0, 1, 2].map((i) => ({ x: SLOT_X, y: 262 + i * 58, w: SLOT_W, h: 50 }));
+  const slotDelRects = slotRects.map((r) => ({ x: r.x + r.w - 52, y: r.y + 8, w: 38, h: 34 }));
+  const modeRect = { x: SLOT_X, y: 262 + 3 * 58 + 8, w: SLOT_W, h: 46 };
+  const soundRect = { x: VIEW.w / 2 - 162, y: 514, w: 324, h: 42 };
+  const diffRect = { x: VIEW.w / 2 - 162, y: 564, w: 324, h: 42 };
+  const creativeRect = { x: VIEW.w / 2 - 162, y: 636, w: 324, h: 38 };
+  let menuCreative = false, menuStory = false;
 
   function startNew(story) {
     G.resetState();
@@ -145,9 +146,11 @@
     enter() { G.cam.x = 0; G.cam.y = 0; },
     update() {},
     onTap(x, y) {
-      if (rectHit(freeRect, x, y)) { G.audio.blip(); startNew(false); return; }
-      if (rectHit(storyRect, x, y)) { G.audio.blip(); startNew(true); return; }
-      if (G.hasSave() && rectHit(contRect, x, y)) { G.audio.blip(); continueGame(); return; }
+      for (let i = 0; i < G.SLOTS; i++) {
+        if (G.hasSave(i) && rectHit(slotDelRects[i], x, y)) { G.clearSave(i); G.audio.blip(); G.shake(2); return; } // 🗑 удалить мир
+        if (rectHit(slotRects[i], x, y)) { G.audio.blip(); G.setSlot(i); if (G.hasSave(i)) continueGame(); else startNew(menuStory); return; } // продолжить / создать новый мир
+      }
+      if (rectHit(modeRect, x, y)) { menuStory = !menuStory; G.audio.blip(); return; }
       if (rectHit(soundRect, x, y)) { G.state.sound = !G.state.sound; if (G.state.sound) G.audio.resume(); G.audio.blip(); return; }
       if (rectHit(diffRect, x, y)) { G.cycleDifficulty(); G.audio.blip(); return; }
       if (rectHit(creativeRect, x, y)) { menuCreative = !menuCreative; G.audio.blip(); }
@@ -162,23 +165,32 @@
       ctx.fillStyle = "rgba(255,255,255,0.85)";
       circle(ctx, 760, 120, 34); circle(ctx, 800, 132, 40); circle(ctx, 840, 118, 30);
       circle(ctx, 300, 200, 26); circle(ctx, 332, 210, 30);
-      // маскот-Стив
-      ctx.save(); ctx.translate(VIEW.w / 2, 300); ctx.scale(2.0, 2.0); G.drawSteve(ctx, 0, 0, 1, 0, 0); ctx.restore();
+      // маскот-Стив (компактнее, чтобы влезли слоты)
+      ctx.save(); ctx.translate(VIEW.w / 2, 210); ctx.scale(1.3, 1.3); G.drawSteve(ctx, 0, 0, 1, 0, 0); ctx.restore();
       // заголовок
       ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-      ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.font = G.f(86, "900"); ctx.fillText("КУБОМИР", VIEW.w / 2 + 4, 168);
-      ctx.fillStyle = "#fff"; ctx.fillText("КУБОМИР", VIEW.w / 2, 164);
-      ctx.fillStyle = PAL.ink; ctx.font = G.f(22, "bold");
-      ctx.fillText("2D-Майнкрафт · вид сверху · designed for Lev", VIEW.w / 2, 200);
-      // кнопки
-      drawButton(ctx, freeRect, "🌳 Свободный", PAL.btn, true);
-      drawButton(ctx, storyRect, "📖 История", "#c9a0ff", true);
-      if (G.hasSave()) drawButton(ctx, contRect, "Продолжить", "#8fd0ff", true);
+      ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.font = G.f(68, "900"); ctx.fillText("КУБОМИР", VIEW.w / 2 + 3, 124);
+      ctx.fillStyle = "#fff"; ctx.fillText("КУБОМИР", VIEW.w / 2, 121);
+      ctx.fillStyle = PAL.ink; ctx.font = G.f(18, "bold");
+      ctx.fillText("2D-Майнкрафт · designed for Lev", VIEW.w / 2, 150);
+      // 🌍 слоты миров (продолжить существующий / создать новый / удалить)
+      for (let i = 0; i < G.SLOTS; i++) {
+        const r = slotRects[i], info = G.slotInfo(i);
+        if (info) {
+          drawButton(ctx, r, "🌍 Мир " + (i + 1) + " · день " + info.day + (info.story ? " 📖" : "") + (info.creative ? " 🎨" : ""), "#8fd0ff", true);
+          const dr = slotDelRects[i];
+          ctx.fillStyle = "rgba(214,75,75,0.92)"; rr(ctx, dr.x, dr.y, dr.w, dr.h, 8); ctx.fill();
+          ctx.fillStyle = "#fff"; ctx.font = G.f(19); ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🗑", dr.x + dr.w / 2, dr.y + dr.h / 2 + 1);
+        } else {
+          drawButton(ctx, r, "➕ Новый мир " + (i + 1), "#b6e29e", true);
+        }
+      }
+      drawButton(ctx, modeRect, menuStory ? "Новый мир: 📖 История" : "Новый мир: 🌳 Свободный", menuStory ? "#c9a0ff" : "#ffe08a", true);
       drawButton(ctx, soundRect, G.state.sound ? "🔊 Звук: вкл" : "🔇 Звук: выкл", "#e8e8ee", true);
       const df = G.diff();
       drawButton(ctx, diffRect, "Сложность: " + df.icon + " " + df.name, "#e8e8ee", true);
-      ctx.fillStyle = "rgba(20,30,20,0.72)"; ctx.font = G.f(15); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(df.hint, VIEW.w / 2, diffRect.y + diffRect.h + 17);
+      ctx.fillStyle = "rgba(20,30,20,0.72)"; ctx.font = G.f(14); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(df.hint, VIEW.w / 2, diffRect.y + diffRect.h + 14);
       drawButton(ctx, creativeRect, menuCreative ? "🎨 Творческий: ВКЛ" : "🎨 Творческий: выкл", menuCreative ? "#c9a0ff" : "#e8e8ee", true);
     },
   });
